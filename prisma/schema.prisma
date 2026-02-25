@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+// Enums
+
+enum Plan {
+  FREE
+  PREMIUM
+}
+
+enum WidgetType {
+  KPI_7DAYS
+  KPI_14DAYS
+  KPI_30DAYS
+  KPI_ALLTIME
+  ABSENCE_BAR
+  ABSENCE_TREND
+  SUBJECT_BREAKDOWN
+  ABSENCE_RECOMMENDER
+}
+
+// User Model
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  plan          Plan      @default(FREE)
+  
+  // Paddle Integration
+  paddleCustomerId     String?
+  paddleSubscriptionId String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  accounts        Account[]
+  sessions        Session[]
+  untisConnection UntisConnection?
+  userStats       UserStats?
+  widgets         Widget[]
+
+  @@index([plan])
+}
+
+// Auth.js v5 Models
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([identifier, token])
+}
+
+// UntisConnection Model
+
+model UntisConnection {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  serverUrl String
+  school    String
+  username  String
+  secret    String
+  isActive  Boolean @default(true)
+  lastSyncAt DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([isActive])
+}
+
+// UserStats Model
+
+model UserStats {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  absences7Days    Int      @default(0)
+  absences14Days   Int      @default(0)
+  absences30Days   Int      @default(0)
+  absencesAllTime  Int      @default(0)
+  trend7Days       Json?
+  trend14Days      Json?
+  trend30Days      Json?
+  subjectBreakdown Json
+  dailyTrend       Json
+  lastCalculated   DateTime @default(now())
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([lastCalculated])
+}
+
+// Widget Model
+
+model Widget {
+  id         String     @id @default(cuid())
+  userId     String
+  type       WidgetType
+  layoutData Json
+  config     Json?
+  order      Int        @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([type])
+}

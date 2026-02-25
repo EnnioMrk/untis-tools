@@ -1,0 +1,55 @@
+# ===========================================
+# Stage 1: Dependencies
+# ===========================================
+FROM oven/bun:latest AS deps
+
+WORKDIR /app
+
+# Copy package files for dependency installation
+COPY package.json bun.lock ./
+
+# Install dependencies with frozen lockfile
+RUN bun install --frozen-lockfile
+
+# ===========================================
+# Stage 2: Builder
+# ===========================================
+FROM oven/bun:latest AS builder
+
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Generate Prisma Client
+RUN bunx prisma generate
+
+# ===========================================
+# Stage 3: Runner (Production Worker)
+# ===========================================
+FROM oven/bun:latest AS runner
+
+WORKDIR /app
+
+# Set Node environment to production
+ENV NODE_ENV=production
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 worker
+
+# Copy necessary files for worker
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+
+COPY --from=builder /app/worker ./worker
+
+# Set correct ownership
+RUN chown -R worker:nodejs /app
+
+# Switch to non-root user
+USER worker
+
+CMD ["bun", "run", "worker"]
