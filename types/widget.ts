@@ -8,6 +8,8 @@ export const WidgetType = {
   ABSENCE_TREND: 'ABSENCE_TREND',
   SUBJECT_BREAKDOWN: 'SUBJECT_BREAKDOWN',
   ABSENCE_RECOMMENDER: 'ABSENCE_RECOMMENDER',
+  ABSENCE_RATE: 'ABSENCE_RATE',
+  TOTAL_ABSENCE_BAR: 'TOTAL_ABSENCE_BAR',
 } as const;
 
 export type WidgetType = typeof WidgetType[keyof typeof WidgetType];
@@ -57,7 +59,7 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, {
   },
   ABSENCE_TREND: {
     name: 'Absence Trend',
-    description: 'Line chart showing daily absence rate over 30 days',
+    description: 'Line chart showing cumulative absence rate over 30 days',
     defaultW: 1,
     defaultH: 2,
     isPremium: false,
@@ -75,6 +77,20 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, {
     defaultW: 2,
     defaultH: 2,
     isPremium: true,
+  },
+  TOTAL_ABSENCE_BAR: {
+    name: 'Absence Rate Bar',
+    description: 'Visual bar showing total absence percentage with severity',
+    defaultW: 2,
+    defaultH: 1,
+    isPremium: false,
+  },
+  ABSENCE_RATE: {
+    name: 'Absence Rate',
+    description: 'Shows overall absence rate percentage',
+    defaultW: 1,
+    defaultH: 1,
+    isPremium: false,
   },
 };
 
@@ -137,12 +153,14 @@ export interface UserStatsResponse {
   absences7Days: number;
   absences14Days: number;
   absences30Days: number;
-  absencesAllTime: number;
   trend7Days: TrendData | null;
   trend14Days: TrendData | null;
   trend30Days: TrendData | null;
   subjectBreakdown: SubjectBreakdownItem[];
   dailyTrend: DailyTrendItem[];
+  absenceRate: number;
+  totalRealLessons: number;
+  totalAbsences: number;
 }
 
 // Default widgets for new users

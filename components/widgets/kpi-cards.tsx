@@ -64,7 +64,7 @@ interface KPICardsProps {
   absences7Days: number;
   absences14Days: number;
   absences30Days: number;
-  absencesAllTime: number;
+  totalAbsences: number;
   trend7Days: TrendData | null;
   trend14Days: TrendData | null;
   trend30Days: TrendData | null;
@@ -74,7 +74,7 @@ export function KPICards({
   absences7Days,
   absences14Days,
   absences30Days,
-  absencesAllTime,
+  totalAbsences,
   trend7Days,
   trend14Days,
   trend30Days,
@@ -104,7 +104,7 @@ export function KPICards({
       />
       <KPICard
         title="All Time"
-        value={absencesAllTime}
+        value={totalAbsences}
         trend={null}
         icon={<Infinity className="w-6 h-6 text-green-600" />}
         iconBg="bg-green-100"
@@ -119,7 +119,7 @@ interface SingleKPIWidgetProps {
   absences7Days: number;
   absences14Days: number;
   absences30Days: number;
-  absencesAllTime: number;
+  totalAbsences: number;
   trend7Days: TrendData | null;
   trend14Days: TrendData | null;
   trend30Days: TrendData | null;
@@ -130,7 +130,7 @@ export function SingleKPIWidget({
   absences7Days,
   absences14Days,
   absences30Days,
-  absencesAllTime,
+  totalAbsences,
   trend7Days,
   trend14Days,
   trend30Days,
@@ -159,7 +159,7 @@ export function SingleKPIWidget({
     },
     KPI_ALLTIME: {
       title: 'All Time',
-      value: absencesAllTime,
+      value: totalAbsences,
       trend: null,
       icon: <Infinity className="w-6 h-6 text-green-600" />,
       iconBg: 'bg-green-100',

@@ -330,26 +330,26 @@ export function calculateSubjectBreakdown(
 
 /**
  * Calculate daily trend for the past 30 days
+ * Returns cumulative absence rate: total absences up to each day / total real lessons up to each day
+ * Real lessons = total lessons - cancelled lessons
+ * Includes all historical data from the start, not just the past 30 days
  */
 export function calculateDailyTrend(
   lessons: ProcessedLesson[]
 ): DailyTrendPoint[] {
-  const dailyData = new Map<string, { total: number; absences: number }>();
+  // Group all lessons by date
+  const allDailyData = new Map<string, { total: number; absences: number; cancelled: number }>();
   
-  // Initialize all days in the past 30 days
-  for (let i = 0; i < 30; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-    dailyData.set(dateStr, { total: 0, absences: 0 });
-  }
-  
-  // Count lessons and absences per day
+  // Process all lessons to build daily data
   for (const lesson of lessons) {
-    if (!dailyData.has(lesson.date)) continue;
+    if (!allDailyData.has(lesson.date)) {
+      allDailyData.set(lesson.date, { total: 0, absences: 0, cancelled: 0 });
+    }
     
-    const stats = dailyData.get(lesson.date)!;
-    if (!lesson.isCancelled) {
+    const stats = allDailyData.get(lesson.date)!;
+    if (lesson.isCancelled) {
+      stats.cancelled++;
+    } else {
       stats.total++;
       if (lesson.isAbsent) {
         stats.absences++;
@@ -357,22 +357,93 @@ export function calculateDailyTrend(
     }
   }
   
-  // Convert to array and calculate rates
-  const trend: DailyTrendPoint[] = [];
-  const sortedDates = Array.from(dailyData.keys()).sort();
+  // Get all unique dates and sort them
+  const allDates = Array.from(allDailyData.keys()).sort();
   
-  for (const date of sortedDates) {
-    const stats = dailyData.get(date)!;
-    const absenceRate = stats.total > 0 
-      ? Math.round((stats.absences / stats.total) * 100 * 100) / 100 
-      : 0;
+  if (allDates.length === 0) {
+    // No data - return empty 30-day array
+    const emptyTrend: DailyTrendPoint[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      emptyTrend.push({
+        date: dateStr,
+        absenceRate: 0,
+        totalLessons: 0,
+        absences: 0,
+      });
+    }
+    return emptyTrend;
+  }
+  
+  // Calculate cumulative values starting from the earliest date
+  const trend: DailyTrendPoint[] = [];
+  let cumulativeAbsences = 0;
+  let cumulativeRealLessons = 0;
+  
+  // Find the earliest date in the data
+  const earliestDate = allDates[0];
+  const earliestDateObj = new Date(earliestDate);
+  
+  // Create a map of all dates from earliest to now for cumulative calculation
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const cumulativeData = new Map<string, { cumulativeAbsences: number; cumulativeRealLessons: number }>();
+  
+  // Iterate through all dates in order and build cumulative data
+  for (const date of allDates) {
+    const stats = allDailyData.get(date)!;
+    cumulativeAbsences += stats.absences;
+    cumulativeRealLessons += stats.total;
     
-    trend.push({
-      date,
-      absenceRate,
-      totalLessons: stats.total,
-      absences: stats.absences,
+    cumulativeData.set(date, {
+      cumulativeAbsences,
+      cumulativeRealLessons,
     });
+  }
+  
+  // Now generate the last 30 days with cumulative values
+  // If we have data before 30 days ago, that data is included in the cumulative totals
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    
+    // If we have data for this date, use cumulative values up to this date
+    // Otherwise, use the last known cumulative values (or 0 if no data at all)
+    const dateData = cumulativeData.get(dateStr);
+    
+    if (dateData) {
+      const absenceRate = dateData.cumulativeRealLessons > 0
+        ? Math.round((dateData.cumulativeAbsences / dateData.cumulativeRealLessons) * 100 * 100) / 100
+        : 0;
+      
+      trend.push({
+        date: dateStr,
+        absenceRate,
+        totalLessons: dateData.cumulativeRealLessons,
+        absences: dateData.cumulativeAbsences,
+      });
+    } else if (trend.length > 0) {
+      // No data for this date - carry forward the last known cumulative values
+      const lastKnown = trend[trend.length - 1];
+      trend.push({
+        date: dateStr,
+        absenceRate: lastKnown.absenceRate,
+        totalLessons: lastKnown.totalLessons,
+        absences: lastKnown.absences,
+      });
+    } else {
+      // No data at all yet
+      trend.push({
+        date: dateStr,
+        absenceRate: 0,
+        totalLessons: 0,
+        absences: 0,
+      });
+    }
   }
   
   return trend;
@@ -388,11 +459,30 @@ export function calculateStats(
 ): UserStatsData {
   const processedLessons = processLessonData(timetable, absences);
   
+  // Calculate absenceCounts FIRST - this has accumulation logic for allTime
+  const absenceCounts = calculateAbsenceCounts(processedLessons, previousStats);
+  
+  // Calculate total real lessons from processed lessons
+  // Note: totalRealLessons is calculated fresh as we don't accumulate lesson counts
+  const totalRealLessons = processedLessons.filter(l => !l.isCancelled).length;
+  
+  // FIX: Use absenceCounts.allTime for totalAbsences to match the database field
+  // This calculates total absences from all time
+  const totalAbsences = absenceCounts.allTime;
+  
+  const absenceRate = totalRealLessons > 0 
+    ? Math.round((totalAbsences / totalRealLessons) * 100 * 100) / 100 
+    : 0;
+  
   return {
-    absenceCounts: calculateAbsenceCounts(processedLessons, previousStats),
+    absenceCounts,
     trendChanges: calculateTrendChanges(processedLessons, previousStats),
     subjectBreakdown: calculateSubjectBreakdown(processedLessons),
     dailyTrend: calculateDailyTrend(processedLessons),
     lastUpdated: new Date().toISOString(),
+    absenceRate,
+    totalRealLessons,
+    totalAbsences,
   };
 }
+

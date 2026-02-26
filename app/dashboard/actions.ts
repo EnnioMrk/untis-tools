@@ -174,12 +174,15 @@ export async function getUserStats(
         absences7Days: userStats.absences7Days,
         absences14Days: userStats.absences14Days,
         absences30Days: userStats.absences30Days,
-        absencesAllTime: userStats.absencesAllTime,
+        
         trend7Days,
         trend14Days,
         trend30Days,
         subjectBreakdown: subjectBreakdown || [],
         dailyTrend: dailyTrend || [],
+        absenceRate: userStats.absenceRate || 0,
+        totalRealLessons: userStats.totalRealLessons || 0,
+        totalAbsences: userStats.totalAbsences || 0,
     };
 
     // Cache the result if useCache is true
@@ -500,3 +503,4 @@ export async function getPresetDateOptions(): Promise<
         return [{ label: 'School year start', date: schoolYearStart }];
     }
 }
+

@@ -184,7 +184,7 @@ export async function getStoredUserStats() {
     absences7Days: userStats.absences7Days,
     absences14Days: userStats.absences14Days,
     absences30Days: userStats.absences30Days,
-    absencesAllTime: userStats.absencesAllTime,
+    totalAbsences: userStats.totalAbsences,
     subjectBreakdown: userStats.subjectBreakdown,
     dailyTrend: userStats.dailyTrend,
     lastCalculated: userStats.lastCalculated,

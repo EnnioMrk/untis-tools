@@ -8,7 +8,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("POSTGRES_URL")
 }
 
 // Enums
@@ -27,6 +26,8 @@ enum WidgetType {
   ABSENCE_TREND
   SUBJECT_BREAKDOWN
   ABSENCE_RECOMMENDER
+  ABSENCE_RATE
+  TOTAL_ABSENCE_BAR
 }
 
 // User Model
@@ -138,13 +139,15 @@ model UserStats {
   absences7Days    Int      @default(0)
   absences14Days   Int      @default(0)
   absences30Days   Int      @default(0)
-  absencesAllTime  Int      @default(0)
   trend7Days       Json?
   trend14Days      Json?
   trend30Days      Json?
   subjectBreakdown Json
   dailyTrend       Json
   lastCalculated   DateTime @default(now())
+  absenceRate      Float    @default(0)
+  totalRealLessons Int      @default(0)
+  totalAbsences    Int      @default(0)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

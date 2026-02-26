@@ -10,6 +10,7 @@ import { AbsenceBarChart } from '@/components/widgets/absence-bar-chart';
 import { AbsenceTrendChart } from '@/components/widgets/absence-trend-chart';
 import { SubjectBreakdownChart } from '@/components/widgets/subject-breakdown-chart';
 import { AbsenceRecommender } from '@/components/widgets/absence-recommender';
+import { TotalAbsenceBar } from '@/components/widgets/total-absence-bar';
 import { WidgetLibrary } from '@/components/dashboard/widget-library';
 import {
     saveWidgetLayout,
@@ -79,7 +80,8 @@ export function DashboardGrid({
     const [isEditMode, setIsEditMode] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-    const [containerWidth, setContainerWidth] = useState(800);
+    const [containerWidth, setContainerWidth] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const layoutUpdateTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -93,9 +95,16 @@ export function DashboardGrid({
             }
         };
 
-        updateWidth();
+        // Set mounted state first
+        setIsMounted(true);
+        
+        // Small delay to ensure DOM is ready
+        const timeoutId = setTimeout(updateWidth, 0);
         window.addEventListener('resize', updateWidth);
-        return () => window.removeEventListener('resize', updateWidth);
+        return () => {
+            clearTimeout(timeoutId);
+            window.removeEventListener('resize', updateWidth);
+        };
     }, []);
 
     // Calculate the maximum y position for adding new widgets
@@ -292,7 +301,7 @@ export function DashboardGrid({
                         absences7Days={widgetStats.absences7Days}
                         absences14Days={widgetStats.absences14Days}
                         absences30Days={widgetStats.absences30Days}
-                        absencesAllTime={widgetStats.absencesAllTime}
+                        totalAbsences={widgetStats.totalAbsences}
                         trend7Days={widgetStats.trend7Days}
                         trend14Days={widgetStats.trend14Days}
                         trend30Days={widgetStats.trend30Days}
@@ -305,7 +314,7 @@ export function DashboardGrid({
                         absences7Days={widgetStats.absences7Days}
                         absences14Days={widgetStats.absences14Days}
                         absences30Days={widgetStats.absences30Days}
-                        absencesAllTime={widgetStats.absencesAllTime}
+                        totalAbsences={widgetStats.totalAbsences}
                         trend7Days={widgetStats.trend7Days}
                         trend14Days={widgetStats.trend14Days}
                         trend30Days={widgetStats.trend30Days}
@@ -318,7 +327,7 @@ export function DashboardGrid({
                         absences7Days={widgetStats.absences7Days}
                         absences14Days={widgetStats.absences14Days}
                         absences30Days={widgetStats.absences30Days}
-                        absencesAllTime={widgetStats.absencesAllTime}
+                        totalAbsences={widgetStats.totalAbsences}
                         trend7Days={widgetStats.trend7Days}
                         trend14Days={widgetStats.trend14Days}
                         trend30Days={widgetStats.trend30Days}
@@ -331,7 +340,7 @@ export function DashboardGrid({
                         absences7Days={widgetStats.absences7Days}
                         absences14Days={widgetStats.absences14Days}
                         absences30Days={widgetStats.absences30Days}
-                        absencesAllTime={widgetStats.absencesAllTime}
+                        totalAbsences={widgetStats.totalAbsences}
                         trend7Days={widgetStats.trend7Days}
                         trend14Days={widgetStats.trend14Days}
                         trend30Days={widgetStats.trend30Days}
@@ -352,6 +361,14 @@ export function DashboardGrid({
                     <AbsenceRecommender
                         data={widgetStats.subjectBreakdown}
                         isPremium={isPremium}
+                    />
+                );
+            case 'TOTAL_ABSENCE_BAR':
+                return (
+                    <TotalAbsenceBar
+                        absenceRate={widgetStats.absenceRate}
+                        totalAbsences={widgetStats.totalAbsences}
+                        totalRealLessons={widgetStats.totalRealLessons}
                     />
                 );
             default:
@@ -434,7 +451,9 @@ export function DashboardGrid({
 
             {/* Grid */}
             <div className="w-full" ref={containerRef}>
-                <GridLayout
+                {/* Prevent render until we have the container width to avoid layout shift */}
+                {isMounted && containerWidth > 0 && (
+                    <GridLayout
                     className="layout"
                     layout={layout}
                     // @ts-expect-error - react-grid-layout types are outdated
@@ -458,7 +477,7 @@ export function DashboardGrid({
                             {isEditMode && (
                                 <div className="widget-header flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100">
                                     <span className="text-sm font-medium text-gray-700">
-                                        {WIDGET_DEFINITIONS[widget.type].name}
+                                        {WIDGET_DEFINITIONS[widget.type]?.name ?? `Unknown: ${widget.type}`}
                                     </span>
                                     <button
                                         onClick={() =>
@@ -484,6 +503,7 @@ export function DashboardGrid({
                         </div>
                     ))}
                 </GridLayout>
+                )}
             </div>
 
             {/* Empty state */}

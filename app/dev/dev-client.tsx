@@ -453,7 +453,7 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
                   <div className="text-sm text-gray-600">Last 30 Days</div>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg text-center">
-                  <div className="text-3xl font-bold text-blue-600">{storedStats.absencesAllTime}</div>
+                  <div className="text-3xl font-bold text-blue-600">{storedStats.totalAbsences}</div>
                   <div className="text-sm text-gray-600">All Time</div>
                 </div>
               </div>
@@ -515,3 +515,4 @@ function getDefaultStartDate(): string {
 function getDefaultEndDate(): string {
   return new Date().toISOString().split('T')[0];
 }
+

@@ -85,6 +85,12 @@ export interface UserStatsData {
   dailyTrend: DailyTrendPoint[];
   /** ISO timestamp when stats were last calculated */
   lastUpdated: string;
+  /** Overall absence rate (0-100) */
+  absenceRate: number;
+  /** Total number of real lessons (not cancelled) */
+  totalRealLessons: number;
+  /** Total number of absences */
+  totalAbsences: number;
 }
 
 /**

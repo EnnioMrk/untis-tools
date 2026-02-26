@@ -133,15 +133,34 @@ export async function triggerImmediateSync(userId: string): Promise<{
         );
 
         // Get previous stats if available
-        const previousStats = await prisma.userStats.findUnique({
+        const previousStatsRecord = await prisma.userStats.findUnique({
             where: { userId },
         });
 
-        const previousStatsData: UserStatsData | null =
-            previousStats?.subjectBreakdown as any;
+        // Construct proper UserStatsData from Prisma flat fields
+        // The Prisma model stores flat fields, but calculateAbsenceCounts expects absenceCounts object
+        const previousStatsData: UserStatsData | null = previousStatsRecord ? {
+            absenceCounts: {
+                last7Days: previousStatsRecord.absences7Days,
+                last14Days: previousStatsRecord.absences14Days,
+                last30Days: previousStatsRecord.absences30Days,
+                allTime: previousStatsRecord.totalAbsences,
+            },
+            trendChanges: {
+                last7Days: (previousStatsRecord.trend7Days as any) || { previousValue: 0, changePercent: null, direction: 'neutral' as const },
+                last14Days: (previousStatsRecord.trend14Days as any) || { previousValue: 0, changePercent: null, direction: 'neutral' as const },
+                last30Days: (previousStatsRecord.trend30Days as any) || { previousValue: 0, changePercent: null, direction: 'neutral' as const },
+            },
+            subjectBreakdown: (previousStatsRecord.subjectBreakdown as any) || {},
+            dailyTrend: (previousStatsRecord.dailyTrend as any) || [],
+            lastUpdated: previousStatsRecord.lastCalculated?.toISOString() || new Date().toISOString(),
+            absenceRate: previousStatsRecord.absenceRate,
+            totalRealLessons: previousStatsRecord.totalRealLessons,
+            totalAbsences: previousStatsRecord.totalAbsences,
+        } : null;
         console.log(
             '[triggerImmediateSync] Previous stats:',
-            previousStats ? 'exists' : 'none',
+            previousStatsData ? 'exists' : 'none',
         );
 
         // Calculate new statistics
@@ -176,7 +195,7 @@ export async function triggerImmediateSync(userId: string): Promise<{
                 absences7Days: stats.absenceCounts.last7Days,
                 absences14Days: stats.absenceCounts.last14Days,
                 absences30Days: stats.absenceCounts.last30Days,
-                absencesAllTime: stats.absenceCounts.allTime,
+                
                 trend7Days: stats.trendChanges as any,
                 trend14Days: stats.trendChanges as any,
                 trend30Days: stats.trendChanges as any,
@@ -188,7 +207,7 @@ export async function triggerImmediateSync(userId: string): Promise<{
                 absences7Days: stats.absenceCounts.last7Days,
                 absences14Days: stats.absenceCounts.last14Days,
                 absences30Days: stats.absenceCounts.last30Days,
-                absencesAllTime: stats.absenceCounts.allTime,
+                
                 trend7Days: stats.trendChanges as any,
                 trend14Days: stats.trendChanges as any,
                 trend30Days: stats.trendChanges as any,
@@ -226,3 +245,4 @@ export async function triggerImmediateSync(userId: string): Promise<{
         return { success: false, error: errorMessage };
     }
 }
+

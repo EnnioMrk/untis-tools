@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Plus, Lock, Calendar, Clock, BarChart3, Infinity, TrendingUp, Layers, AlertTriangle } from 'lucide-react';
+import { X, Plus, Lock, Calendar, Clock, BarChart3, Infinity, TrendingUp, Layers, AlertTriangle, Activity } from 'lucide-react';
 import type { WidgetType, WidgetData } from '@/types/widget';
 import { WIDGET_DEFINITIONS } from '@/types/widget';
 
@@ -21,6 +21,7 @@ const WIDGET_ICONS: Record<WidgetType, React.ReactNode> = {
   ABSENCE_TREND: <TrendingUp className="w-5 h-5" />,
   SUBJECT_BREAKDOWN: <Layers className="w-5 h-5" />,
   ABSENCE_RECOMMENDER: <AlertTriangle className="w-5 h-5" />,
+  TOTAL_ABSENCE_BAR: <Activity className="w-5 h-5" />,
 };
 
 export function WidgetLibrary({
