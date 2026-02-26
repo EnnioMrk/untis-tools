@@ -111,13 +111,14 @@ model VerificationToken {
 // UntisConnection Model
 
 model UntisConnection {
-  id        String  @id @default(cuid())
-  userId    String  @unique
+  id        String    @id @default(cuid())
+  userId    String    @unique
   serverUrl String
   school    String
   username  String
   secret    String
-  isActive  Boolean @default(true)
+  isActive  Boolean   @default(true)
+  dataStartDate DateTime?
   lastSyncAt DateTime?
   
   createdAt DateTime @default(now())
