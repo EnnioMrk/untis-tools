@@ -1,9 +1,9 @@
-import path from "node:path";
-import { defineConfig, env } from "prisma/config";
+import path from 'node:path';
+import { defineConfig, env } from 'prisma/config';
 
 export default defineConfig({
-  schema: path.join(__dirname, "schema.prisma"),
-  datasource: {
-    url: env("POSTGRES_URL"),
-  },
+    schema: path.join(__dirname, 'schema.prisma'),
+    datasource: {
+        url: env('POSTGRES_URL'),
+    },
 });

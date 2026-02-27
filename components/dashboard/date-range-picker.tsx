@@ -60,10 +60,10 @@ export function DateRangePicker({
     };
 
     const formatDisplayDate = () => {
-        if (!initialDate) return 'School year start';
+        if (!initialDate) return 'From start';
         return initialDate.toLocaleDateString('en-US', {
             year: 'numeric',
-            month: 'long',
+            month: 'short',
             day: 'numeric',
         });
     };
@@ -131,7 +131,7 @@ export function DateRangePicker({
                                     className="text-xs px-2 py-1.5 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors font-medium"
                                     disabled={isPending}
                                 >
-                                    School year start
+                                    From start
                                 </button>
                             </div>
 

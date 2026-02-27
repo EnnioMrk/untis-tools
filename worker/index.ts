@@ -66,7 +66,8 @@ async function syncUser(
   serverUrl: string,
   school: string,
   username: string,
-  encryptedSecret: string
+  encryptedSecret: string,
+  dataStartDate: Date | null
 ): Promise<SyncResult> {
   const startTime = Date.now();
   let untis: WebUntisSecretAuth | null = null;
@@ -91,9 +92,10 @@ async function syncUser(
     await untis.login();
     logger.info(`Logged in to Untis for user ${userId}`);
     
-    // Calculate date range - use school year start for full year data
+    // Calculate date range - use custom dataStartDate if set, otherwise use school year start
     const endDate = new Date();
-    const startDate = await getSchoolYearStart();
+    const startDate = dataStartDate || await getSchoolYearStart();
+    logger.info(`Sync date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
     
     // Fetch data
     const [timetable, absences] = await Promise.all([
@@ -103,35 +105,8 @@ async function syncUser(
     
     logger.info(`Fetched ${timetable.length} lessons and ${absences.length} absences for user ${userId}`);
     
-    // Get previous stats if available
-    const previousStatsRecord = await prisma.userStats.findUnique({
-      where: { userId },
-    });
-    
-    // Construct proper UserStatsData from Prisma flat fields
-    // The Prisma model stores flat fields, but calculateAbsenceCounts expects absenceCounts object
-    const previousStatsData: UserStatsData | null = previousStatsRecord ? {
-      absenceCounts: {
-        last7Days: previousStatsRecord.absences7Days,
-        last14Days: previousStatsRecord.absences14Days,
-        last30Days: previousStatsRecord.absences30Days,
-        allTime: previousStatsRecord.totalAbsences, // This was missing - totalAbsences stored all-time count
-      },
-      trendChanges: {
-        last7Days: (previousStatsRecord.trend7Days as any) || { previousValue: 0, changePercent: null, direction: 'neutral' as const },
-        last14Days: (previousStatsRecord.trend14Days as any) || { previousValue: 0, changePercent: null, direction: 'neutral' as const },
-        last30Days: (previousStatsRecord.trend30Days as any) || { previousValue: 0, changePercent: null, direction: 'neutral' as const },
-      },
-      subjectBreakdown: (previousStatsRecord.subjectBreakdown as any) || {},
-      dailyTrend: (previousStatsRecord.dailyTrend as any) || [],
-      lastUpdated: previousStatsRecord.lastCalculated?.toISOString() || new Date().toISOString(),
-      absenceRate: previousStatsRecord.absenceRate,
-      totalRealLessons: previousStatsRecord.totalRealLessons,
-      totalAbsences: previousStatsRecord.totalAbsences,
-    } : null;
-    
     // Calculate new statistics
-    const stats = calculateStats(timetable, absences, previousStatsData);
+    const stats = calculateStats(timetable, absences);
     
      // Save to database
      await prisma.userStats.upsert({
@@ -240,7 +215,8 @@ async function runSyncCycle(): Promise<void> {
         connection.serverUrl,
         connection.school,
         connection.username,
-        connection.secret
+        connection.secret,
+        connection.dataStartDate
       );
       results.push(result);
     }

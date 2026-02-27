@@ -25,6 +25,12 @@ interface DashboardGridProps {
     stats: UserStatsResponse | null;
     isPremium: boolean;
     refreshKey?: number;
+    isEditMode?: boolean;
+    onEditModeChange?: (mode: boolean) => void;
+    onSavingChange?: (saving: boolean) => void;
+    onSyncingChange?: (syncing: boolean) => void;
+    onAddWidgetClick?: () => void;
+    libraryTrigger?: number;
 }
 
 // Grid configuration
@@ -37,25 +43,64 @@ export function DashboardGrid({
     stats,
     isPremium,
     refreshKey = 0,
+    isEditMode: externalEditMode,
+    onEditModeChange,
+    onSavingChange,
+    onSyncingChange,
+    onAddWidgetClick,
+    libraryTrigger,
 }: DashboardGridProps) {
     const renderCount = useRef(0);
     const prevWidgetsJson = useRef('');
-    const [isSyncing, setIsSyncing] = useState(false);
+    const [isSyncingInternal, setIsSyncingInternal] = useState(false);
     const [syncError, setSyncError] = useState<string | null>(null);
     const [currentStats, setCurrentStats] = useState<UserStatsResponse | null>(
         stats,
     );
 
+    // Use external edit mode if provided, otherwise use internal state
+    const [internalEditMode, setInternalEditMode] = useState(false);
+    const isEditMode =
+        externalEditMode !== undefined ? externalEditMode : internalEditMode;
+    const setIsEditMode = (mode: boolean) => {
+        if (onEditModeChange) {
+            onEditModeChange(mode);
+        } else {
+            setInternalEditMode(mode);
+        }
+    };
+
+    // Use external syncing state if provided
+    const isSyncing = isSyncingInternal;
+    const setIsSyncing = (syncing: boolean) => {
+        setIsSyncingInternal(syncing);
+        if (onSyncingChange) {
+            onSyncingChange(syncing);
+        }
+    };
+
+    const [isSavingInternal, setIsSavingInternal] = useState(false);
+    const isSaving = isSavingInternal;
+    const setIsSaving = (saving: boolean) => {
+        setIsSavingInternal(saving);
+        if (onSavingChange) {
+            onSavingChange(saving);
+        }
+    };
+
     // Refetch stats when refreshKey changes
     useEffect(() => {
         if (refreshKey > 0) {
-            getUserStatsNoCache().then((newStats) => {
-                if (newStats) {
-                    setCurrentStats(newStats);
-                }
-            });
+            handleReloadWithoutCache();
         }
     }, [refreshKey]);
+
+    // Update current stats when the stats prop changes (e.g. after a router.refresh or date change)
+    useEffect(() => {
+        if (stats) {
+            setCurrentStats(stats);
+        }
+    }, [stats]);
 
     // Debug: Track re-renders
     useEffect(() => {
@@ -76,14 +121,28 @@ export function DashboardGrid({
         prevWidgetsJson.current = currentWidgetsJson;
     });
 
+    // Auto-save layout when exiting edit mode
+    const prevEditMode = useRef(isEditMode);
+    useEffect(() => {
+        if (prevEditMode.current && !isEditMode) {
+            handleSaveLayout();
+        }
+        prevEditMode.current = isEditMode;
+    }, [isEditMode]);
+
     const [widgets, setWidgets] = useState<WidgetData[]>(initialWidgets);
-    const [isEditMode, setIsEditMode] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [containerWidth, setContainerWidth] = useState(0);
     const [isMounted, setIsMounted] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const layoutUpdateTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // Handle add widget click from header
+    useEffect(() => {
+        if ((libraryTrigger ?? 0) > 0) {
+            setIsLibraryOpen(true);
+        }
+    }, [libraryTrigger]);
 
     // Measure container width for responsive grid
     useEffect(() => {
@@ -97,7 +156,7 @@ export function DashboardGrid({
 
         // Set mounted state first
         setIsMounted(true);
-        
+
         // Small delay to ensure DOM is ready
         const timeoutId = setTimeout(updateWidth, 0);
         window.addEventListener('resize', updateWidth);
@@ -382,127 +441,62 @@ export function DashboardGrid({
 
     return (
         <div className="w-full">
-            {/* Header with Edit/Save button */}
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <div className="flex items-center gap-2">
-                    {/* Reload without cache button */}
-                    <button
-                        onClick={handleReloadWithoutCache}
-                        disabled={isSyncing}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-                        title="Reload data without cache"
-                    >
-                        {isSyncing ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Loading...
-                            </>
-                        ) : (
-                            <>
-                                <RefreshCw className="w-4 h-4" />
-                                Reload
-                            </>
-                        )}
-                    </button>
-                    {isEditMode && (
-                        <button
-                            onClick={() => setIsLibraryOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Widget
-                        </button>
-                    )}
-                    <button
-                        onClick={() => {
-                            if (isEditMode) {
-                                handleSaveLayout();
-                            } else {
-                                setIsEditMode(true);
-                            }
-                        }}
-                        disabled={isSaving}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                            isEditMode
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                        }`}
-                    >
-                        {isSaving ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Saving...
-                            </>
-                        ) : isEditMode ? (
-                            <>
-                                <Save className="w-4 h-4" />
-                                Save Layout
-                            </>
-                        ) : (
-                            <>
-                                <Edit3 className="w-4 h-4" />
-                                Edit Dashboard
-                            </>
-                        )}
-                    </button>
-                </div>
-            </div>
-
             {/* Grid */}
             <div className="w-full" ref={containerRef}>
                 {/* Prevent render until we have the container width to avoid layout shift */}
                 {isMounted && containerWidth > 0 && (
                     <GridLayout
-                    className="layout"
-                    layout={layout}
-                    // @ts-expect-error - react-grid-layout types are outdated
-                    cols={COLS}
-                    rowHeight={ROW_HEIGHT}
-                    width={containerWidth}
-                    isDraggable={isEditMode}
-                    isResizable={isEditMode}
-                    onLayoutChange={handleLayoutChange}
-                    draggableHandle=".widget-header"
-                    margin={[16, 16] as [number, number]}
-                >
-                    {widgets.map((widget) => (
-                        <div
-                            key={widget.id}
-                            className={`bg-white rounded-xl shadow-sm border overflow-hidden ${
-                                isEditMode ? 'cursor-move' : ''
-                            }`}
-                        >
-                            {/* Widget header with remove button in edit mode */}
-                            {isEditMode && (
-                                <div className="widget-header flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100">
-                                    <span className="text-sm font-medium text-gray-700">
-                                        {WIDGET_DEFINITIONS[widget.type]?.name ?? `Unknown: ${widget.type}`}
-                                    </span>
-                                    <button
-                                        onClick={() =>
-                                            handleRemoveWidget(widget.id)
-                                        }
-                                        className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                                        title="Remove widget"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            )}
-                            {/* Widget content */}
+                        className="layout"
+                        layout={layout}
+                        // @ts-expect-error - react-grid-layout types are outdated
+                        cols={COLS}
+                        rowHeight={ROW_HEIGHT}
+                        width={containerWidth}
+                        isDraggable={isEditMode}
+                        isResizable={isEditMode}
+                        onLayoutChange={handleLayoutChange}
+                        draggableHandle=".widget-header"
+                        margin={[16, 16] as [number, number]}
+                    >
+                        {widgets.map((widget) => (
                             <div
-                                className={
-                                    isEditMode
-                                        ? 'h-[calc(100%-40px)]'
-                                        : 'h-full'
-                                }
+                                key={widget.id}
+                                className={`bg-white rounded-xl shadow-sm border overflow-hidden ${
+                                    isEditMode ? 'cursor-move' : ''
+                                }`}
                             >
-                                {renderWidgetContent(widget)}
+                                {/* Widget header with remove button in edit mode */}
+                                {isEditMode && (
+                                    <div className="widget-header flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100">
+                                        <span className="text-sm font-medium text-gray-700">
+                                            {WIDGET_DEFINITIONS[widget.type]
+                                                ?.name ??
+                                                `Unknown: ${widget.type}`}
+                                        </span>
+                                        <button
+                                            onClick={() =>
+                                                handleRemoveWidget(widget.id)
+                                            }
+                                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Remove widget"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
+                                {/* Widget content */}
+                                <div
+                                    className={
+                                        isEditMode
+                                            ? 'h-[calc(100%-40px)]'
+                                            : 'h-full'
+                                    }
+                                >
+                                    {renderWidgetContent(widget)}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </GridLayout>
+                        ))}
+                    </GridLayout>
                 )}
             </div>
 

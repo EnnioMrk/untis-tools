@@ -19,6 +19,7 @@ const WIDGET_ICONS: Record<WidgetType, React.ReactNode> = {
   KPI_ALLTIME: <Infinity className="w-5 h-5" />,
   ABSENCE_BAR: <BarChart3 className="w-5 h-5" />,
   ABSENCE_TREND: <TrendingUp className="w-5 h-5" />,
+  ABSENCE_RATE: <Activity className="w-5 h-5" />,
   SUBJECT_BREAKDOWN: <Layers className="w-5 h-5" />,
   ABSENCE_RECOMMENDER: <AlertTriangle className="w-5 h-5" />,
   TOTAL_ABSENCE_BAR: <Activity className="w-5 h-5" />,

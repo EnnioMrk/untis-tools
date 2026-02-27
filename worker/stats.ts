@@ -177,8 +177,7 @@ export function processLessonData(
  * Calculate absence counts for different time windows
  */
 export function calculateAbsenceCounts(
-  lessons: ProcessedLesson[],
-  previousStats?: UserStatsData | null
+  lessons: ProcessedLesson[]
 ): AbsenceCounts {
   const now = new Date();
   
@@ -200,33 +199,11 @@ export function calculateAbsenceCounts(
   // Count total absences from all available lessons (not limited by time window)
   const totalAbsences = lessons.filter(l => l.isAbsent).length;
   
-  // For all time, use the best available data:
-  // 1. If we have previous stats with valid allTime, accumulate incrementally
-  // 2. Otherwise, use total absences from available data
-  // 3. At minimum, use the 30-day count
-  let allTime: number;
-  const prevAllTime = previousStats?.absenceCounts?.allTime;
-  const prevLast30 = previousStats?.absenceCounts?.last30Days;
-  
-  if (typeof prevAllTime === 'number' && prevAllTime > 0) {
-    // Accumulate from previous stats
-    const newAbsences = typeof prevLast30 === 'number' 
-      ? Math.max(0, last30Days - prevLast30)
-      : last30Days;
-    allTime = prevAllTime + newAbsences;
-  } else if (totalAbsences > 0) {
-    // Use total absences from current data as baseline
-    allTime = totalAbsences;
-  } else {
-    // Fall back to 30-day count
-    allTime = last30Days;
-  }
-  
   return {
     last7Days,
     last14Days,
     last30Days,
-    allTime: Math.max(0, allTime),
+    allTime: Math.max(0, totalAbsences),
   };
 }
 
@@ -234,8 +211,7 @@ export function calculateAbsenceCounts(
  * Calculate trend changes as percentages with full TrendData
  */
 export function calculateTrendChanges(
-  lessons: ProcessedLesson[],
-  previousStats?: UserStatsData | null
+  lessons: ProcessedLesson[]
 ): { last7Days: TrendData; last14Days: TrendData; last30Days: TrendData } {
   const now = new Date();
   
@@ -454,13 +430,12 @@ export function calculateDailyTrend(
  */
 export function calculateStats(
   timetable: any[],
-  absences: any[],
-  previousStats?: UserStatsData | null
+  absences: any[]
 ): UserStatsData {
   const processedLessons = processLessonData(timetable, absences);
   
-  // Calculate absenceCounts FIRST - this has accumulation logic for allTime
-  const absenceCounts = calculateAbsenceCounts(processedLessons, previousStats);
+  // Calculate absenceCounts
+  const absenceCounts = calculateAbsenceCounts(processedLessons);
   
   // Calculate total real lessons from processed lessons
   // Note: totalRealLessons is calculated fresh as we don't accumulate lesson counts
@@ -476,7 +451,7 @@ export function calculateStats(
   
   return {
     absenceCounts,
-    trendChanges: calculateTrendChanges(processedLessons, previousStats),
+    trendChanges: calculateTrendChanges(processedLessons),
     subjectBreakdown: calculateSubjectBreakdown(processedLessons),
     dailyTrend: calculateDailyTrend(processedLessons),
     lastUpdated: new Date().toISOString(),

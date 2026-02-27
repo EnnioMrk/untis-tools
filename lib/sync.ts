@@ -132,39 +132,8 @@ export async function triggerImmediateSync(userId: string): Promise<{
             `[triggerImmediateSync] Fetched ${timetable.length} lessons and ${absences.length} absences`,
         );
 
-        // Get previous stats if available
-        const previousStatsRecord = await prisma.userStats.findUnique({
-            where: { userId },
-        });
-
-        // Construct proper UserStatsData from Prisma flat fields
-        // The Prisma model stores flat fields, but calculateAbsenceCounts expects absenceCounts object
-        const previousStatsData: UserStatsData | null = previousStatsRecord ? {
-            absenceCounts: {
-                last7Days: previousStatsRecord.absences7Days,
-                last14Days: previousStatsRecord.absences14Days,
-                last30Days: previousStatsRecord.absences30Days,
-                allTime: previousStatsRecord.totalAbsences,
-            },
-            trendChanges: {
-                last7Days: (previousStatsRecord.trend7Days as any) || { previousValue: 0, changePercent: null, direction: 'neutral' as const },
-                last14Days: (previousStatsRecord.trend14Days as any) || { previousValue: 0, changePercent: null, direction: 'neutral' as const },
-                last30Days: (previousStatsRecord.trend30Days as any) || { previousValue: 0, changePercent: null, direction: 'neutral' as const },
-            },
-            subjectBreakdown: (previousStatsRecord.subjectBreakdown as any) || {},
-            dailyTrend: (previousStatsRecord.dailyTrend as any) || [],
-            lastUpdated: previousStatsRecord.lastCalculated?.toISOString() || new Date().toISOString(),
-            absenceRate: previousStatsRecord.absenceRate,
-            totalRealLessons: previousStatsRecord.totalRealLessons,
-            totalAbsences: previousStatsRecord.totalAbsences,
-        } : null;
-        console.log(
-            '[triggerImmediateSync] Previous stats:',
-            previousStatsData ? 'exists' : 'none',
-        );
-
         // Calculate new statistics
-        const stats = calculateStats(timetable, absences, previousStatsData);
+        const stats = calculateStats(timetable, absences);
         console.log(
             '[triggerImmediateSync] Calculated stats:',
             JSON.stringify(stats.absenceCounts),
@@ -196,24 +165,30 @@ export async function triggerImmediateSync(userId: string): Promise<{
                 absences14Days: stats.absenceCounts.last14Days,
                 absences30Days: stats.absenceCounts.last30Days,
                 
-                trend7Days: stats.trendChanges as any,
-                trend14Days: stats.trendChanges as any,
-                trend30Days: stats.trendChanges as any,
+                trend7Days: stats.trendChanges.last7Days as any,
+                trend14Days: stats.trendChanges.last14Days as any,
+                trend30Days: stats.trendChanges.last30Days as any,
                 subjectBreakdown: subjectBreakdownArray as any,
                 dailyTrend: dailyTrendArray as any,
                 lastCalculated: new Date(),
+                absenceRate: stats.absenceRate,
+                totalRealLessons: stats.totalRealLessons,
+                totalAbsences: stats.totalAbsences,
             },
             update: {
                 absences7Days: stats.absenceCounts.last7Days,
                 absences14Days: stats.absenceCounts.last14Days,
                 absences30Days: stats.absenceCounts.last30Days,
                 
-                trend7Days: stats.trendChanges as any,
-                trend14Days: stats.trendChanges as any,
-                trend30Days: stats.trendChanges as any,
+                trend7Days: stats.trendChanges.last7Days as any,
+                trend14Days: stats.trendChanges.last14Days as any,
+                trend30Days: stats.trendChanges.last30Days as any,
                 subjectBreakdown: subjectBreakdownArray as any,
                 dailyTrend: dailyTrendArray as any,
                 lastCalculated: new Date(),
+                absenceRate: stats.absenceRate,
+                totalRealLessons: stats.totalRealLessons,
+                totalAbsences: stats.totalAbsences,
             },
         });
         console.log('[triggerImmediateSync] Stats saved to database');
