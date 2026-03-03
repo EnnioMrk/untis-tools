@@ -106,13 +106,13 @@ export interface UntisLesson {
   /** End time (minutes from midnight) */
   endTime: number;
   /** Subject information */
-  su?: { id: number; name: string; longName: string }[];
+  su?: { id: number; name: string; longName?: string }[];
   /** Teacher information */
-  te?: { id: number; name: string; longName: string }[];
+  te?: { id: number; name: string; longName?: string }[];
   /** Room information */
-  ro?: { id: number; name: string; longName: string }[];
+  ro?: { id: number; name: string; longName?: string }[];
   /** Class information */
-  kl?: { id: number; name: string; longName: string }[];
+  kl?: { id: number; name: string; longName?: string }[];
   /** Lesson code (cancelled, irregular, etc.) */
   code?: 'cancelled' | 'irregular';
   /** Additional information */
