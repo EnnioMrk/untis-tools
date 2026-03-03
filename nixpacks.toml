@@ -2,10 +2,10 @@
 nixPkgs = ["nodejs_22", "bun", "openssl"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["bun install --frozen-lockfile"]
 
 [phases.build]
-cmds = ["bun run build"]
+cmds = ["bunx prisma generate", "bun run build"]
 
 [start]
 cmd = "bun run start"
