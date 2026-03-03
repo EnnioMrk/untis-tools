@@ -1,9 +1,9 @@
-'use server';
+"use server";
 
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { decrypt } from '@/lib/encryption';
-import type { UntisLesson, UntisAbsence } from '@/worker/types';
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { decrypt } from "@/lib/encryption";
+import type { UntisLesson, UntisAbsence } from "@/worker/types";
 
 type RawUntisAbsence = {
     id?: number;
@@ -30,7 +30,7 @@ export async function getTimetableForWeek(
 }> {
     const session = await auth();
     if (!session?.user?.id) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
     }
 
     // Get user's Untis connection
@@ -39,12 +39,12 @@ export async function getTimetableForWeek(
     });
 
     if (!connection || !connection.isActive) {
-        throw new Error('No active Untis connection');
+        throw new Error("No active Untis connection");
     }
 
     // Import WebUntis dynamically
-    const { WebUntisSecretAuth } = await import('webuntis');
-    const { authenticator } = await import('otplib');
+    const { WebUntisSecretAuth } = await import("webuntis");
+    const { authenticator } = await import("otplib");
 
     // Decrypt the secret
     const secret = decrypt(connection.secret);
@@ -55,7 +55,7 @@ export async function getTimetableForWeek(
         connection.username,
         secret,
         connection.serverUrl,
-        'UntisTools-Timetable',
+        "UntisTools-Timetable",
         authenticator,
         false,
     );
