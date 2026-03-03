@@ -2,6 +2,9 @@
     "name": "untis-tools",
     "version": "0.1.0",
     "private": true,
+    "engines": {
+        "node": ">=20 <23"
+    },
     "scripts": {
         "dev": "bun --bun next dev",
         "build": "bun --bun next build",
