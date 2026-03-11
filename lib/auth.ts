@@ -56,11 +56,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.plan = user.plan;
       }
+
+      if (!token.id && token.sub) {
+        token.id = token.sub;
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
+        session.user.id = (token.id || token.sub) as string;
         session.user.plan = (token.plan || 'FREE') as 'FREE' | 'PREMIUM';
       }
       return session;
