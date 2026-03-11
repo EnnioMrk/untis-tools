@@ -4,19 +4,19 @@ import { prisma } from "@/lib/prisma";
 import { OnboardingClient } from "./onboarding-client";
 
 export default async function OnboardingPage() {
-  const session = await auth();
+    const session = await auth();
 
-  if (!session?.user?.id) {
-    redirect("/auth/signin");
-  }
+    if (!session?.user?.id) {
+        redirect("/auth/signin");
+    }
 
-  const untisConnection = await prisma.untisConnection.findUnique({
-    where: { userId: session.user.id },
-  });
+    const untisConnection = await prisma.untisConnection.findUnique({
+        where: { userId: session.user.id },
+    });
 
-  if (untisConnection) {
-    redirect("/dashboard");
-  }
+    if (untisConnection) {
+        redirect("/dashboard");
+    }
 
-  return <OnboardingClient />;
+    return <OnboardingClient />;
 }
