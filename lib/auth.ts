@@ -122,7 +122,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     session.user.hasActiveAccess = accessState.hasAccess;
                 } else {
                     session.user.plan = (token.plan || "BASIC") as Plan;
-                    session.user.planSource = (token.planSource || "NONE") as typeof session.user.planSource;
+                    session.user.planSource = (token.planSource ||
+                        "NONE") as typeof session.user.planSource;
                     session.user.isAdmin = Boolean(token.isAdmin);
                     session.user.hasActiveAccess = false;
                 }

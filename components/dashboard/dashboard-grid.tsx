@@ -1,27 +1,21 @@
-'use client';
+"use client";
 
-import {
-    useState,
-    useCallback,
-    useMemo,
-    useRef,
-    useEffect,
-} from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import {
     canAccessWidget,
     getPlanConfig,
     getRequiredPlanForWidget,
     type AppPlan,
-} from '@/lib/plans';
-import { Responsive, useContainerWidth } from 'react-grid-layout';
-import { Plus, Trash2, Loader2, RefreshCw } from 'lucide-react';
+} from "@/lib/plans";
+import { Responsive, useContainerWidth } from "react-grid-layout";
+import { Plus, Trash2, Loader2, RefreshCw } from "lucide-react";
 import type {
     WidgetData,
     WidgetType,
     UserStatsResponse,
     DashboardDeviceType,
     ResponsiveWidgetLayouts,
-} from '@/types/widget';
+} from "@/types/widget";
 import {
     DASHBOARD_BREAKPOINTS,
     DASHBOARD_COLS,
@@ -29,21 +23,21 @@ import {
     WIDGET_DEFINITIONS,
     getDefaultWidgetSize,
     normalizeWidgetData,
-} from '@/types/widget';
-import { SingleKPIWidget } from '@/components/widgets/kpi-cards';
-import { AbsenceBarChart } from '@/components/widgets/absence-bar-chart';
-import { AbsenceTrendChart } from '@/components/widgets/absence-trend-chart';
-import { SubjectBreakdownChart } from '@/components/widgets/subject-breakdown-chart';
-import { AbsenceRecommender } from '@/components/widgets/absence-recommender';
-import { TotalAbsenceBar } from '@/components/widgets/total-absence-bar';
-import { WidgetLibrary } from '@/components/dashboard/widget-library';
+} from "@/types/widget";
+import { SingleKPIWidget } from "@/components/widgets/kpi-cards";
+import { AbsenceBarChart } from "@/components/widgets/absence-bar-chart";
+import { AbsenceTrendChart } from "@/components/widgets/absence-trend-chart";
+import { SubjectBreakdownChart } from "@/components/widgets/subject-breakdown-chart";
+import { AbsenceRecommender } from "@/components/widgets/absence-recommender";
+import { TotalAbsenceBar } from "@/components/widgets/total-absence-bar";
+import { WidgetLibrary } from "@/components/dashboard/widget-library";
 import {
     saveWidgetLayout,
     triggerManualSync,
     getUserStatsNoCache,
-} from '@/app/dashboard/actions';
+} from "@/app/dashboard/actions";
 
-import 'react-grid-layout/css/styles.css';
+import "react-grid-layout/css/styles.css";
 
 interface GridLayoutItem {
     i: string;
@@ -163,7 +157,7 @@ export function DashboardGrid({
     libraryTrigger,
 }: DashboardGridProps) {
     const renderCount = useRef(0);
-    const prevWidgetsJson = useRef('');
+    const prevWidgetsJson = useRef("");
     const [isSyncingInternal, setIsSyncingInternal] = useState(false);
     const [syncError, setSyncError] = useState<string | null>(null);
     const [currentStats, setCurrentStats] = useState<UserStatsResponse | null>(
@@ -250,7 +244,7 @@ export function DashboardGrid({
     );
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [currentBreakpoint, setCurrentBreakpoint] =
-        useState<DashboardDeviceType>('desktop');
+        useState<DashboardDeviceType>("desktop");
     const planConfig = getPlanConfig(userPlan);
     const layoutUpdateTimeout = useRef<NodeJS.Timeout | null>(null);
     const pendingLayoutsRef = useRef<ResponsiveLayouts | null>(null);
@@ -282,7 +276,10 @@ export function DashboardGrid({
 
     // Handle layout change - with debouncing to prevent infinite loops
     const handleLayoutChange = useCallback(
-        (_: readonly GridLayoutItem[], allLayouts: PartialResponsiveLayouts) => {
+        (
+            _: readonly GridLayoutItem[],
+            allLayouts: PartialResponsiveLayouts,
+        ) => {
             const nextLayouts: ResponsiveLayouts = {
                 desktop: [...(allLayouts.desktop ?? [])],
                 tablet: [...(allLayouts.tablet ?? [])],
@@ -291,7 +288,7 @@ export function DashboardGrid({
 
             pendingLayoutsRef.current = nextLayouts;
             console.log(
-                '[DashboardGrid] Layout change triggered, items:',
+                "[DashboardGrid] Layout change triggered, items:",
                 Object.values(nextLayouts).reduce(
                     (count, deviceLayouts) => count + deviceLayouts.length,
                     0,
@@ -339,10 +336,10 @@ export function DashboardGrid({
             if (result.success) {
                 setIsEditMode(false);
             } else {
-                console.error('Failed to save layout:', result.error);
+                console.error("Failed to save layout:", result.error);
             }
         } catch (error) {
-            console.error('Failed to save layout:', error);
+            console.error("Failed to save layout:", error);
         } finally {
             setIsSaving(false);
         }
@@ -366,12 +363,11 @@ export function DashboardGrid({
                 const size = getDefaultWidgetSize(type, device);
                 const nextY = widgets.length
                     ? Math.max(
-                          ...widgets.map(
-                              (widget) =>
-                                  widget.layouts?.[device]
-                                      ? widget.layouts[device].y +
-                                        widget.layouts[device].h
-                                      : 0,
+                          ...widgets.map((widget) =>
+                              widget.layouts?.[device]
+                                  ? widget.layouts[device].y +
+                                    widget.layouts[device].h
+                                  : 0,
                           ),
                       )
                     : 0;
@@ -413,14 +409,14 @@ export function DashboardGrid({
         try {
             const result = await triggerManualSync();
             if (!result.success) {
-                setSyncError(result.error || 'Sync failed');
+                setSyncError(result.error || "Sync failed");
             } else {
                 // Refresh the page to get updated data
                 window.location.reload();
             }
         } catch (error) {
             setSyncError(
-                error instanceof Error ? error.message : 'Sync failed',
+                error instanceof Error ? error.message : "Sync failed",
             );
         } finally {
             setIsSyncing(false);
@@ -435,7 +431,7 @@ export function DashboardGrid({
             // First trigger a sync to get fresh data from Untis
             const syncResult = await triggerManualSync();
             if (!syncResult.success) {
-                setSyncError(syncResult.error || 'Sync failed');
+                setSyncError(syncResult.error || "Sync failed");
                 // Still try to get whatever data we have
             }
 
@@ -444,11 +440,11 @@ export function DashboardGrid({
             if (freshStats) {
                 setCurrentStats(freshStats);
             } else {
-                setSyncError('Failed to fetch fresh data');
+                setSyncError("Failed to fetch fresh data");
             }
         } catch (error) {
             setSyncError(
-                error instanceof Error ? error.message : 'Reload failed',
+                error instanceof Error ? error.message : "Reload failed",
             );
         } finally {
             setIsSyncing(false);
@@ -487,7 +483,7 @@ export function DashboardGrid({
         }
 
         switch (widget.type) {
-            case 'KPI_7DAYS':
+            case "KPI_7DAYS":
                 return (
                     <SingleKPIWidget
                         type="KPI_7DAYS"
@@ -500,7 +496,7 @@ export function DashboardGrid({
                         trend30Days={widgetStats.trend30Days}
                     />
                 );
-            case 'KPI_14DAYS':
+            case "KPI_14DAYS":
                 return (
                     <SingleKPIWidget
                         type="KPI_14DAYS"
@@ -513,7 +509,7 @@ export function DashboardGrid({
                         trend30Days={widgetStats.trend30Days}
                     />
                 );
-            case 'KPI_30DAYS':
+            case "KPI_30DAYS":
                 return (
                     <SingleKPIWidget
                         type="KPI_30DAYS"
@@ -526,7 +522,7 @@ export function DashboardGrid({
                         trend30Days={widgetStats.trend30Days}
                     />
                 );
-            case 'KPI_ALLTIME':
+            case "KPI_ALLTIME":
                 return (
                     <SingleKPIWidget
                         type="KPI_ALLTIME"
@@ -539,23 +535,23 @@ export function DashboardGrid({
                         trend30Days={widgetStats.trend30Days}
                     />
                 );
-            case 'ABSENCE_BAR':
+            case "ABSENCE_BAR":
                 return <AbsenceBarChart data={widgetStats.subjectBreakdown} />;
-            case 'ABSENCE_TREND':
+            case "ABSENCE_TREND":
                 return <AbsenceTrendChart data={widgetStats.dailyTrend} />;
-            case 'SUBJECT_BREAKDOWN':
+            case "SUBJECT_BREAKDOWN":
                 return (
                     <SubjectBreakdownChart
                         data={widgetStats.subjectBreakdown}
                     />
                 );
-            case 'ABSENCE_RECOMMENDER': {
+            case "ABSENCE_RECOMMENDER": {
                 const hasRecommenderAccess = canAccessWidget(
                     userPlan,
-                    'ABSENCE_RECOMMENDER',
+                    "ABSENCE_RECOMMENDER",
                 );
                 const recommenderRequiredPlan = getRequiredPlanForWidget(
-                    'ABSENCE_RECOMMENDER',
+                    "ABSENCE_RECOMMENDER",
                 );
                 return (
                     <AbsenceRecommender
@@ -567,7 +563,7 @@ export function DashboardGrid({
                     />
                 );
             }
-            case 'TOTAL_ABSENCE_BAR':
+            case "TOTAL_ABSENCE_BAR":
                 return (
                     <TotalAbsenceBar
                         absenceRate={widgetStats.absenceRate}
@@ -598,7 +594,7 @@ export function DashboardGrid({
                         rowHeight={ROW_HEIGHT}
                         dragConfig={{
                             enabled: isEditMode,
-                            handle: '.widget-drag-handle',
+                            handle: ".widget-drag-handle",
                         }}
                         resizeConfig={{ enabled: isEditMode }}
                         onLayoutChange={handleLayoutChange}
@@ -622,7 +618,7 @@ export function DashboardGrid({
                                         className="absolute top-3 right-3 z-10 rounded-md border border-gray-200 bg-white/95 p-1.5 text-gray-400 shadow-sm transition-colors hover:text-red-500"
                                         title={`Remove ${
                                             WIDGET_DEFINITIONS[widget.type]
-                                                ?.name ?? 'widget'
+                                                ?.name ?? "widget"
                                         }`}
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -632,8 +628,8 @@ export function DashboardGrid({
                                 <div
                                     className={`h-full ${
                                         isEditMode
-                                            ? 'widget-drag-handle cursor-move'
-                                            : ''
+                                            ? "widget-drag-handle cursor-move"
+                                            : ""
                                     }`}
                                 >
                                     {renderWidgetContent(widget)}

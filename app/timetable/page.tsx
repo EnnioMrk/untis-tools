@@ -1,11 +1,11 @@
-import { redirect } from 'next/navigation';
-import { TimetableClient } from './timetable-client';
-import { getTimetableForWeek, hasUntisConnection } from './actions';
-import { auth } from '@/lib/auth';
-import { ensureActiveSubscriptionAccess } from '@/lib/subscription';
-import type { UntisLesson, UntisAbsence } from '@/worker/types';
+import { redirect } from "next/navigation";
+import { TimetableClient } from "./timetable-client";
+import { getTimetableForWeek, hasUntisConnection } from "./actions";
+import { auth } from "@/lib/auth";
+import { ensureActiveSubscriptionAccess } from "@/lib/subscription";
+import type { UntisLesson, UntisAbsence } from "@/worker/types";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 /**
  * Get the start of the week (Monday) for a given date
@@ -38,7 +38,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
 
     // Check if user is authenticated
     if (!session?.user?.id) {
-        redirect('/auth/signin');
+        redirect("/auth/signin");
     }
 
     await ensureActiveSubscriptionAccess(session.user.id);
@@ -46,7 +46,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     // Check if user has an Untis connection
     const hasConnection = await hasUntisConnection();
     if (!hasConnection) {
-        redirect('/onboarding');
+        redirect("/onboarding");
     }
 
     // Parse the week from search params
@@ -78,12 +78,12 @@ export default async function TimetablePage({ searchParams }: PageProps) {
         lessons = data.lessons;
         absences = data.absences;
     } catch (error) {
-        console.error('Failed to fetch timetable:', error);
+        console.error("Failed to fetch timetable:", error);
         // Show error state or empty state
     }
 
     // Format week start for client component
-    const weekStartStr = weekStart.toISOString().split('T')[0];
+    const weekStartStr = weekStart.toISOString().split("T")[0];
 
     return (
         <TimetableClient

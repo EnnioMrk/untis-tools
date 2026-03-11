@@ -1,17 +1,17 @@
-'use server';
+"use server";
 
-import { auth } from '@/lib/auth';
+import { auth } from "@/lib/auth";
 import {
     canAccessWidget,
     getPlanConfig,
     getRequiredPlanForWidget,
     sanitizeWidgetsForPlan,
     type AppPlan,
-} from '@/lib/plans';
-import { normalizeShopTheme, type ShopThemeId } from '@/lib/shop';
-import { prisma } from '@/lib/prisma';
-import { getUserStatsCache, invalidateUserStatsCache } from '@/lib/cache';
-import { revalidatePath } from 'next/cache';
+} from "@/lib/plans";
+import { normalizeShopTheme, type ShopThemeId } from "@/lib/shop";
+import { prisma } from "@/lib/prisma";
+import { getUserStatsCache, invalidateUserStatsCache } from "@/lib/cache";
+import { revalidatePath } from "next/cache";
 import type {
     WidgetData,
     UserStatsResponse,
@@ -19,15 +19,15 @@ import type {
     SubjectBreakdownItem,
     DailyTrendItem,
     ResponsiveWidgetLayouts,
-} from '@/types/widget';
+} from "@/types/widget";
 import {
     DEFAULT_WIDGETS,
     WIDGET_DEFINITIONS,
     normalizeWidgetData,
-} from '@/types/widget';
-import { triggerImmediateSync } from '@/lib/sync';
-import { getSchoolYearStart } from '@/lib/school-year';
-import { getUserAccessState } from '@/lib/subscription';
+} from "@/types/widget";
+import { triggerImmediateSync } from "@/lib/sync";
+import { getSchoolYearStart } from "@/lib/school-year";
+import { getUserAccessState } from "@/lib/subscription";
 
 /**
  * Validate widget layout based on user's plan
@@ -72,7 +72,7 @@ export async function getUserStats(
 ): Promise<UserStatsResponse | null> {
     const session = await auth();
     if (!session?.user?.id) {
-        console.log('[getUserStats] No session or user ID');
+        console.log("[getUserStats] No session or user ID");
         return null;
     }
 
@@ -84,15 +84,15 @@ export async function getUserStats(
         const cache = getUserStatsCache();
         const cachedStats = cache.get(cacheKey);
         if (cachedStats) {
-            console.log('[getUserStats] Cache hit for user:', userId);
+            console.log("[getUserStats] Cache hit for user:", userId);
             return cachedStats as UserStatsResponse;
         }
-        console.log('[getUserStats] Cache miss for user:', userId);
+        console.log("[getUserStats] Cache miss for user:", userId);
     } else {
-        console.log('[getUserStats] Cache bypassed for user:', userId);
+        console.log("[getUserStats] Cache bypassed for user:", userId);
     }
 
-    console.log('[getUserStats] Fetching stats for user:', session.user.id);
+    console.log("[getUserStats] Fetching stats for user:", session.user.id);
 
     const userStats = await prisma.userStats.findUnique({
         where: { userId: session.user.id },
@@ -100,7 +100,7 @@ export async function getUserStats(
 
     if (!userStats) {
         console.log(
-            '[getUserStats] No userStats found in database for user:',
+            "[getUserStats] No userStats found in database for user:",
             session.user.id,
         );
 
@@ -109,20 +109,20 @@ export async function getUserStats(
             where: { userId: session.user.id },
         });
         console.log(
-            '[getUserStats] User has UntisConnection:',
+            "[getUserStats] User has UntisConnection:",
             !!connection,
             connection
                 ? {
                       isActive: connection.isActive,
                       lastSyncAt: connection.lastSyncAt,
                   }
-                : 'N/A',
+                : "N/A",
         );
 
         return null;
     }
 
-    console.log('[getUserStats] Found userStats:', {
+    console.log("[getUserStats] Found userStats:", {
         absences7Days: userStats.absences7Days,
         lastCalculated: userStats.lastCalculated,
     });
@@ -139,7 +139,7 @@ export async function getUserStats(
             userStats.subjectBreakdown as unknown as SubjectBreakdownItem[];
     } else if (
         userStats.subjectBreakdown &&
-        typeof userStats.subjectBreakdown === 'object'
+        typeof userStats.subjectBreakdown === "object"
     ) {
         // Convert from Record format to array
         subjectBreakdown = Object.entries(
@@ -185,7 +185,7 @@ export async function getUserStats(
         absences7Days: userStats.absences7Days,
         absences14Days: userStats.absences14Days,
         absences30Days: userStats.absences30Days,
-        
+
         trend7Days,
         trend14Days,
         trend30Days,
@@ -211,7 +211,7 @@ export async function getUserStats(
 export async function getUserWidgets(): Promise<WidgetData[]> {
     const session = await auth();
     if (!session?.user?.id) {
-        return sanitizeWidgetsForPlan(DEFAULT_WIDGETS, 'BASIC');
+        return sanitizeWidgetsForPlan(DEFAULT_WIDGETS, "BASIC");
     }
 
     const user = await prisma.user.findUnique({
@@ -226,11 +226,13 @@ export async function getUserWidgets(): Promise<WidgetData[]> {
             referralBonusMonths: true,
         },
     });
-    const userPlan = (user ? getUserAccessState(user).effectivePlan : 'BASIC') as AppPlan;
+    const userPlan = (
+        user ? getUserAccessState(user).effectivePlan : "BASIC"
+    ) as AppPlan;
 
     const widgets = await prisma.widget.findMany({
         where: { userId: session.user.id },
-        orderBy: { order: 'asc' },
+        orderBy: { order: "asc" },
     });
 
     if (widgets.length === 0) {
@@ -244,32 +246,30 @@ export async function getUserWidgets(): Promise<WidgetData[]> {
             layoutData: unknown;
             config: unknown;
         }) => {
-            const layoutData = widget.layoutData as
-                | {
-                      x?: number;
-                      y?: number;
-                      w?: number;
-                      h?: number;
-                      desktop?: {
-                          x: number;
-                          y: number;
-                          w: number;
-                          h: number;
-                      };
-                      tablet?: {
-                          x: number;
-                          y: number;
-                          w: number;
-                          h: number;
-                      };
-                      mobile?: {
-                          x: number;
-                          y: number;
-                          w: number;
-                          h: number;
-                      };
-                  }
-                | null;
+            const layoutData = widget.layoutData as {
+                x?: number;
+                y?: number;
+                w?: number;
+                h?: number;
+                desktop?: {
+                    x: number;
+                    y: number;
+                    w: number;
+                    h: number;
+                };
+                tablet?: {
+                    x: number;
+                    y: number;
+                    w: number;
+                    h: number;
+                };
+                mobile?: {
+                    x: number;
+                    y: number;
+                    w: number;
+                    h: number;
+                };
+            } | null;
 
             const layouts =
                 layoutData?.desktop && layoutData?.tablet && layoutData?.mobile
@@ -289,7 +289,7 @@ export async function getUserWidgets(): Promise<WidgetData[]> {
 
             return {
                 id: widget.id,
-                type: widget.type as WidgetData['type'],
+                type: widget.type as WidgetData["type"],
                 x: desktopLayout.x,
                 y: desktopLayout.y,
                 w: desktopLayout.w,
@@ -300,7 +300,10 @@ export async function getUserWidgets(): Promise<WidgetData[]> {
         },
     );
 
-    return sanitizeWidgetsForPlan(normalizeWidgetData(normalizedWidgets), userPlan);
+    return sanitizeWidgetsForPlan(
+        normalizeWidgetData(normalizedWidgets),
+        userPlan,
+    );
 }
 
 /**
@@ -311,7 +314,7 @@ export async function saveWidgetLayout(
 ): Promise<{ success: boolean; error?: string }> {
     const session = await auth();
     if (!session?.user?.id) {
-        return { success: false, error: 'Not authenticated' };
+        return { success: false, error: "Not authenticated" };
     }
 
     try {
@@ -329,7 +332,9 @@ export async function saveWidgetLayout(
             },
         });
 
-        const userPlan = (user ? getUserAccessState(user).effectivePlan : 'BASIC') as AppPlan;
+        const userPlan = (
+            user ? getUserAccessState(user).effectivePlan : "BASIC"
+        ) as AppPlan;
 
         // Validate widget layout based on user's plan
         const validation = validateWidgetLayout(widgets, userPlan);
@@ -381,8 +386,8 @@ export async function saveWidgetLayout(
 
         return { success: true };
     } catch (error) {
-        console.error('Failed to save widget layout:', error);
-        return { success: false, error: 'Failed to save layout' };
+        console.error("Failed to save widget layout:", error);
+        return { success: false, error: "Failed to save layout" };
     }
 }
 
@@ -408,7 +413,7 @@ export async function hasUntisConnection(): Promise<boolean> {
 export async function getUserPlan(): Promise<AppPlan> {
     const session = await auth();
     if (!session?.user?.id) {
-        return 'BASIC';
+        return "BASIC";
     }
 
     const user = await prisma.user.findUnique({
@@ -424,7 +429,7 @@ export async function getUserPlan(): Promise<AppPlan> {
         },
     });
 
-    return (user ? getUserAccessState(user).effectivePlan : 'BASIC') as AppPlan;
+    return (user ? getUserAccessState(user).effectivePlan : "BASIC") as AppPlan;
 }
 
 /**
@@ -433,7 +438,7 @@ export async function getUserPlan(): Promise<AppPlan> {
 export async function getUserTheme(): Promise<ShopThemeId> {
     const session = await auth();
     if (!session?.user?.id) {
-        return 'DEFAULT';
+        return "DEFAULT";
     }
 
     try {
@@ -444,8 +449,8 @@ export async function getUserTheme(): Promise<ShopThemeId> {
 
         return normalizeShopTheme(user?.activeTheme);
     } catch (error) {
-        console.error('[getUserTheme] Falling back to DEFAULT theme:', error);
-        return 'DEFAULT';
+        console.error("[getUserTheme] Falling back to DEFAULT theme:", error);
+        return "DEFAULT";
     }
 }
 
@@ -458,18 +463,18 @@ export async function triggerManualSync(): Promise<{
 }> {
     const session = await auth();
     if (!session?.user?.id) {
-        return { success: false, error: 'Not authenticated' };
+        return { success: false, error: "Not authenticated" };
     }
 
     const userId = session.user.id;
-    console.log('[triggerManualSync] Starting manual sync for user:', userId);
+    console.log("[triggerManualSync] Starting manual sync for user:", userId);
 
     const result = await triggerImmediateSync(userId);
 
     // Invalidate cache after sync to ensure fresh data
     if (result.success) {
         console.log(
-            '[triggerManualSync] Sync successful, invalidating cache for user:',
+            "[triggerManualSync] Sync successful, invalidating cache for user:",
             userId,
         );
         invalidateUserStatsCache(userId);
@@ -530,7 +535,7 @@ export async function updateDataStartDate(
 ): Promise<{ success: boolean; error?: string }> {
     const session = await auth();
     if (!session?.user?.id) {
-        return { success: false, error: 'Not authenticated' };
+        return { success: false, error: "Not authenticated" };
     }
 
     try {
@@ -549,12 +554,12 @@ export async function updateDataStartDate(
         await triggerImmediateSync(session.user.id);
 
         // Revalidate the dashboard page to reflect the new date
-        revalidatePath('/dashboard');
+        revalidatePath("/dashboard");
 
         return { success: true };
     } catch (error) {
-        console.error('Failed to update data start date:', error);
-        return { success: false, error: 'Failed to update date' };
+        console.error("Failed to update data start date:", error);
+        return { success: false, error: "Failed to update date" };
     }
 }
 
@@ -581,9 +586,9 @@ export async function getPresetDateOptions(): Promise<
 
         // Get all relevant holidays sorted by end date
         const holidayNames = [
-            'Halbjahresferien',
-            'Sommerferien',
-            'Weihnachtsferien',
+            "Halbjahresferien",
+            "Sommerferien",
+            "Weihnachtsferien",
         ];
         const filteredHolidays = data
             .filter((h: { name: { text: string }[] }) =>
@@ -601,7 +606,7 @@ export async function getPresetDateOptions(): Promise<
         // Map to preset options
         const presets: { label: string; date: Date }[] = filteredHolidays.map(
             (h: { name: { text: string }[]; endDate: string }) => {
-                const holidayName = h.name[0]?.text || 'Unknown';
+                const holidayName = h.name[0]?.text || "Unknown";
                 // Add 1 day to get the day after the holiday ends (first day of school)
                 const startDate = new Date(h.endDate);
                 startDate.setDate(startDate.getDate() + 1);
@@ -614,10 +619,9 @@ export async function getPresetDateOptions(): Promise<
 
         return presets;
     } catch (error) {
-        console.error('Failed to get preset date options:', error);
+        console.error("Failed to get preset date options:", error);
         // Fallback to school year start
         const schoolYearStart = await getSchoolYearStart();
-        return [{ label: 'School year start', date: schoolYearStart }];
+        return [{ label: "School year start", date: schoolYearStart }];
     }
 }
-

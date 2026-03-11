@@ -23,14 +23,16 @@
 > ---
 >
 > **Dashboard: Interactive Grid & Edit Mode**
-> The main dashboard utilizes `react-grid-layout` for a customizable grid. It features a toggleable **"Edit Mode"**. 
+> The main dashboard utilizes `react-grid-layout` for a customizable grid. It features a toggleable **"Edit Mode"**.
+>
 > - **View Mode (Default):** The grid is locked (`isDraggable={false}`, `isResizable={false}`). Widgets cleanly display their data.
-> - **Edit Mode:** When activated via an "Edit Dashboard" button, the grid unlocks. Users can drag to rearrange or resize widgets (spanning 1 or 2 columns). 
+> - **Edit Mode:** When activated via an "Edit Dashboard" button, the grid unlocks. Users can drag to rearrange or resize widgets (spanning 1 or 2 columns).
 > - **Removing Widgets:** In Edit Mode, a visible "X" or trash icon appears in the top-right corner of every widget's Shadcn `CardHeader`, allowing the user to remove it from the grid.
 > - **Adding Widgets (Widget Library):** In Edit Mode, an "Add Widget" button opens a Widget Library (using a Shadcn UI `Sheet` or `Dialog`). This library lists all available widget types. Clicking one adds it to the bottom of the grid.
 > - **Saving:** A "Save Layout" button exits Edit Mode and fires a Next.js Server Action to persist the new widget list and their `react-grid-layout` coordinates (JSON) to the user's `Widget` Prisma model.
 >
 > The following widget types must be implemented, all using **Recharts** wrapped in `<ResponsiveContainer>`:
+>
 > 1. **KPI Cards (×4):** Display "Last 7 Days", "Last 14 Days", "Last 30 Days", "All Time" absence counts with percentage trend changes (e.g., "↑ 100% increase").
 > 2. **Absence Bar Chart:** A standard vertical `BarChart` showing total absences per subject for a given time range.
 > 3. **Absence Trend Line Chart:** A `LineChart` showing the daily absence rate (%) over the last 30 days.
@@ -44,11 +46,12 @@
 >
 > - **Checkout:** Plan buttons call a Next.js Server Action that opens the Paddle Checkout overlay using `@paddle/paddle-js`. Pass the user's DB `id` and target plan as `customData`.
 > - **Webhook:** A Next.js API Route at `app/api/webhooks/paddle/route.ts` uses `@paddle/paddle-node` to verify the Paddle signature. Upgrade to the paid plan from the webhook payload and downgrade to `FREE` on `subscription.canceled`.
-> - **Server-Side Enforcement:** The "Save Layout" Server Action must read the user's `plan` from PostgreSQL *before* saving. Widget limits and widget availability must come from shared plan config instead of hardcoded free/premium rules.
+> - **Server-Side Enforcement:** The "Save Layout" Server Action must read the user's `plan` from PostgreSQL _before_ saving. Widget limits and widget availability must come from shared plan config instead of hardcoded free/premium rules.
 >
 > ---
 >
 > **Tech Stack & Deployment Summary**
+>
 > - **Runtime & Package Manager:** Bun (`bun install`, `bun run`, `bunx prisma generate`)
 > - Framework: Next.js 15 (App Router), TypeScript
 > - Styling: Tailwind CSS + Shadcn UI

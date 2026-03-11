@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation';
-import { type AppPlan } from '@/lib/plans';
-import { getShopTheme } from '@/lib/shop';
-import { DashboardClient } from '@/components/dashboard/dashboard-client';
+import { redirect } from "next/navigation";
+import { type AppPlan } from "@/lib/plans";
+import { getShopTheme } from "@/lib/shop";
+import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import {
     getUserStatsNoCache,
     getUserWidgets,
@@ -10,18 +10,18 @@ import {
     getUserTheme,
     getDataStartDate,
     getPresetDateOptions,
-} from './actions';
-import { auth } from '@/lib/auth';
-import { ensureActiveSubscriptionAccess } from '@/lib/subscription';
+} from "./actions";
+import { auth } from "@/lib/auth";
+import { ensureActiveSubscriptionAccess } from "@/lib/subscription";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
     const session = await auth();
 
     // Check if user is authenticated
     if (!session?.user?.id) {
-        redirect('/auth/signin');
+        redirect("/auth/signin");
     }
 
     await ensureActiveSubscriptionAccess(session.user.id);
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
     // Check if user has an Untis connection
     const hasConnection = await hasUntisConnection();
     if (!hasConnection) {
-        redirect('/onboarding');
+        redirect("/onboarding");
     }
 
     // Fetch user data in parallel
