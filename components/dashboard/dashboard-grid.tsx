@@ -1,10 +1,35 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { GridLayout } from 'react-grid-layout';
-import { Edit3, Save, Plus, Trash2, Loader2, RefreshCw } from 'lucide-react';
-import type { WidgetData, WidgetType, UserStatsResponse } from '@/types/widget';
-import { WIDGET_DEFINITIONS } from '@/types/widget';
+import {
+    useState,
+    useCallback,
+    useMemo,
+    useRef,
+    useEffect,
+} from 'react';
+import {
+    canAccessWidget,
+    getPlanConfig,
+    getRequiredPlanForWidget,
+    type AppPlan,
+} from '@/lib/plans';
+import { Responsive, useContainerWidth } from 'react-grid-layout';
+import { Plus, Trash2, Loader2, RefreshCw } from 'lucide-react';
+import type {
+    WidgetData,
+    WidgetType,
+    UserStatsResponse,
+    DashboardDeviceType,
+    ResponsiveWidgetLayouts,
+} from '@/types/widget';
+import {
+    DASHBOARD_BREAKPOINTS,
+    DASHBOARD_COLS,
+    DASHBOARD_DEVICE_TYPES,
+    WIDGET_DEFINITIONS,
+    getDefaultWidgetSize,
+    normalizeWidgetData,
+} from '@/types/widget';
 import { SingleKPIWidget } from '@/components/widgets/kpi-cards';
 import { AbsenceBarChart } from '@/components/widgets/absence-bar-chart';
 import { AbsenceTrendChart } from '@/components/widgets/absence-trend-chart';
@@ -20,34 +45,121 @@ import {
 
 import 'react-grid-layout/css/styles.css';
 
+interface GridLayoutItem {
+    i: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+type ResponsiveLayouts = Record<DashboardDeviceType, GridLayoutItem[]>;
+type PartialResponsiveLayouts = Partial<
+    Record<DashboardDeviceType | string, readonly GridLayoutItem[]>
+>;
+
 interface DashboardGridProps {
     initialWidgets: WidgetData[];
     stats: UserStatsResponse | null;
-    isPremium: boolean;
+    userPlan: AppPlan;
     refreshKey?: number;
     isEditMode?: boolean;
     onEditModeChange?: (mode: boolean) => void;
     onSavingChange?: (saving: boolean) => void;
     onSyncingChange?: (syncing: boolean) => void;
-    onAddWidgetClick?: () => void;
     libraryTrigger?: number;
 }
 
 // Grid configuration
-const COLS = 2;
 const ROW_HEIGHT = 150;
-const CONTAINER_WIDTH = 800;
+
+function buildLayoutsForGrid(widgets: WidgetData[]): ResponsiveLayouts {
+    return Object.fromEntries(
+        DASHBOARD_DEVICE_TYPES.map(
+            (device) =>
+                [
+                    device,
+                    widgets.map((widget) => ({
+                        i: widget.id,
+                        ...widget.layouts![device],
+                    })),
+                ] as [DashboardDeviceType, GridLayoutItem[]],
+        ),
+    ) as ResponsiveLayouts;
+}
+
+function applyLayoutsToWidgetState(
+    widgets: WidgetData[],
+    allLayouts: ResponsiveLayouts,
+    currentBreakpoint: DashboardDeviceType,
+): WidgetData[] {
+    return widgets.map((widget) => {
+        const nextLayouts = {
+            ...(widget.layouts as ResponsiveWidgetLayouts),
+        };
+        let changed = false;
+
+        for (const device of DASHBOARD_DEVICE_TYPES) {
+            const layoutItem = allLayouts[device]?.find(
+                (layout) => layout.i === widget.id,
+            );
+
+            if (!layoutItem) {
+                continue;
+            }
+
+            const previousLayout = nextLayouts[device];
+            const width = Math.max(
+                1,
+                Math.min(DASHBOARD_COLS[device], layoutItem.w),
+            );
+            const updatedLayout = {
+                x: Math.max(
+                    0,
+                    Math.min(DASHBOARD_COLS[device] - width, layoutItem.x),
+                ),
+                y: Math.max(0, layoutItem.y),
+                w: width,
+                h: Math.max(1, layoutItem.h),
+            };
+
+            if (
+                previousLayout.x !== updatedLayout.x ||
+                previousLayout.y !== updatedLayout.y ||
+                previousLayout.w !== updatedLayout.w ||
+                previousLayout.h !== updatedLayout.h
+            ) {
+                nextLayouts[device] = updatedLayout;
+                changed = true;
+            }
+        }
+
+        if (!changed) {
+            return widget;
+        }
+
+        const activeLayout = nextLayouts[currentBreakpoint];
+
+        return {
+            ...widget,
+            x: activeLayout.x,
+            y: activeLayout.y,
+            w: activeLayout.w,
+            h: activeLayout.h,
+            layouts: nextLayouts,
+        };
+    });
+}
 
 export function DashboardGrid({
     initialWidgets,
     stats,
-    isPremium,
+    userPlan,
     refreshKey = 0,
     isEditMode: externalEditMode,
     onEditModeChange,
     onSavingChange,
     onSyncingChange,
-    onAddWidgetClick,
     libraryTrigger,
 }: DashboardGridProps) {
     const renderCount = useRef(0);
@@ -79,8 +191,7 @@ export function DashboardGrid({
         }
     };
 
-    const [isSavingInternal, setIsSavingInternal] = useState(false);
-    const isSaving = isSavingInternal;
+    const [, setIsSavingInternal] = useState(false);
     const setIsSaving = (saving: boolean) => {
         setIsSavingInternal(saving);
         if (onSavingChange) {
@@ -93,6 +204,8 @@ export function DashboardGrid({
         if (refreshKey > 0) {
             handleReloadWithoutCache();
         }
+        // `handleReloadWithoutCache` intentionally stays outside deps to avoid re-running on every render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [refreshKey]);
 
     // Update current stats when the stats prop changes (e.g. after a router.refresh or date change)
@@ -128,14 +241,23 @@ export function DashboardGrid({
             handleSaveLayout();
         }
         prevEditMode.current = isEditMode;
+        // `handleSaveLayout` intentionally stays outside deps so save only triggers on edit mode transitions.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isEditMode]);
 
-    const [widgets, setWidgets] = useState<WidgetData[]>(initialWidgets);
+    const [widgets, setWidgets] = useState<WidgetData[]>(() =>
+        normalizeWidgetData(initialWidgets),
+    );
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-    const [containerWidth, setContainerWidth] = useState(0);
-    const [isMounted, setIsMounted] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const [currentBreakpoint, setCurrentBreakpoint] =
+        useState<DashboardDeviceType>('desktop');
+    const planConfig = getPlanConfig(userPlan);
     const layoutUpdateTimeout = useRef<NodeJS.Timeout | null>(null);
+    const pendingLayoutsRef = useRef<ResponsiveLayouts | null>(null);
+    const { width, containerRef, mounted } = useContainerWidth({
+        initialWidth: 1280,
+        measureBeforeMount: false,
+    });
 
     // Handle add widget click from header
     useEffect(() => {
@@ -144,102 +266,76 @@ export function DashboardGrid({
         }
     }, [libraryTrigger]);
 
-    // Measure container width for responsive grid
     useEffect(() => {
-        const updateWidth = () => {
-            if (containerRef.current) {
-                const width = containerRef.current.offsetWidth;
-                console.log('[DashboardGrid] Container width:', width);
-                setContainerWidth(width);
+        return () => {
+            if (layoutUpdateTimeout.current) {
+                clearTimeout(layoutUpdateTimeout.current);
             }
         };
-
-        // Set mounted state first
-        setIsMounted(true);
-
-        // Small delay to ensure DOM is ready
-        const timeoutId = setTimeout(updateWidth, 0);
-        window.addEventListener('resize', updateWidth);
-        return () => {
-            clearTimeout(timeoutId);
-            window.removeEventListener('resize', updateWidth);
-        };
     }, []);
 
-    // Calculate the maximum y position for adding new widgets
-    const maxY = useMemo(() => {
-        if (widgets.length === 0) return 0;
-        return Math.max(...widgets.map((w) => w.y + w.h));
-    }, [widgets]);
+    useEffect(() => {
+        setWidgets(normalizeWidgetData(initialWidgets));
+    }, [initialWidgets]);
 
-    // Generate layout for react-grid-layout
-    const layout = useMemo(() => {
-        return widgets.map((widget) => ({
-            i: widget.id,
-            x: widget.x,
-            y: widget.y,
-            w: widget.w,
-            h: widget.h,
-        }));
-    }, [widgets]);
+    const layouts = useMemo(() => buildLayoutsForGrid(widgets), [widgets]);
 
     // Handle layout change - with debouncing to prevent infinite loops
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleLayoutChange = useCallback((newLayout: any) => {
-        console.log(
-            '[DashboardGrid] Layout change triggered, items:',
-            newLayout.length,
-        );
+    const handleLayoutChange = useCallback(
+        (_: readonly GridLayoutItem[], allLayouts: PartialResponsiveLayouts) => {
+            const nextLayouts: ResponsiveLayouts = {
+                desktop: [...(allLayouts.desktop ?? [])],
+                tablet: [...(allLayouts.tablet ?? [])],
+                mobile: [...(allLayouts.mobile ?? [])],
+            };
 
-        // Clear any pending timeout
-        if (layoutUpdateTimeout.current) {
-            clearTimeout(layoutUpdateTimeout.current);
-        }
+            pendingLayoutsRef.current = nextLayouts;
+            console.log(
+                '[DashboardGrid] Layout change triggered, items:',
+                Object.values(nextLayouts).reduce(
+                    (count, deviceLayouts) => count + deviceLayouts.length,
+                    0,
+                ),
+            );
 
-        // Debounce the state update to prevent rapid re-renders
-        layoutUpdateTimeout.current = setTimeout(() => {
-            setWidgets((prev) => {
-                const updated = prev.map((widget) => {
-                    const layoutItem = newLayout.find(
-                        (l: {
-                            i: string;
-                            x: number;
-                            y: number;
-                            w: number;
-                            h: number;
-                        }) => l.i === widget.id,
-                    );
-                    if (
-                        layoutItem &&
-                        (layoutItem.x !== widget.x ||
-                            layoutItem.y !== widget.y ||
-                            layoutItem.w !== widget.w ||
-                            layoutItem.h !== widget.h)
-                    ) {
-                        console.log(
-                            '[DashboardGrid] Updating widget:',
-                            widget.id,
-                        );
-                        return {
-                            ...widget,
-                            x: layoutItem.x,
-                            y: layoutItem.y,
-                            w: layoutItem.w,
-                            h: layoutItem.h,
-                        };
-                    }
-                    return widget;
-                });
-                return updated;
-            });
-        }, 100); // 100ms debounce
-    }, []);
+            if (layoutUpdateTimeout.current) {
+                clearTimeout(layoutUpdateTimeout.current);
+            }
+
+            layoutUpdateTimeout.current = setTimeout(() => {
+                setWidgets((prev) =>
+                    applyLayoutsToWidgetState(
+                        prev,
+                        nextLayouts,
+                        currentBreakpoint,
+                    ),
+                );
+            }, 100);
+        },
+        [currentBreakpoint],
+    );
 
     // Handle save layout
     const handleSaveLayout = async () => {
+        const widgetsToSave = pendingLayoutsRef.current
+            ? applyLayoutsToWidgetState(
+                  widgets,
+                  pendingLayoutsRef.current,
+                  currentBreakpoint,
+              )
+            : widgets;
+
+        if (layoutUpdateTimeout.current) {
+            clearTimeout(layoutUpdateTimeout.current);
+            layoutUpdateTimeout.current = null;
+        }
+
+        pendingLayoutsRef.current = null;
+        setWidgets(widgetsToSave);
+
         setIsSaving(true);
         try {
-            const result = await saveWidgetLayout(widgets);
+            const result = await saveWidgetLayout(widgetsToSave);
             if (result.success) {
                 setIsEditMode(false);
             } else {
@@ -254,14 +350,52 @@ export function DashboardGrid({
 
     // Handle add widget
     const handleAddWidget = (type: WidgetType) => {
-        const definition = WIDGET_DEFINITIONS[type];
+        if (!canAccessWidget(userPlan, type)) {
+            return;
+        }
+
+        if (
+            planConfig.features.maxWidgets !== null &&
+            widgets.length >= planConfig.features.maxWidgets
+        ) {
+            return;
+        }
+
+        const nextLayouts = Object.fromEntries(
+            DASHBOARD_DEVICE_TYPES.map((device) => {
+                const size = getDefaultWidgetSize(type, device);
+                const nextY = widgets.length
+                    ? Math.max(
+                          ...widgets.map(
+                              (widget) =>
+                                  widget.layouts?.[device]
+                                      ? widget.layouts[device].y +
+                                        widget.layouts[device].h
+                                      : 0,
+                          ),
+                      )
+                    : 0;
+
+                return [
+                    device,
+                    {
+                        x: 0,
+                        y: nextY,
+                        w: size.w,
+                        h: size.h,
+                    },
+                ];
+            }),
+        ) as ResponsiveWidgetLayouts;
+
         const newWidget: WidgetData = {
             id: `${type.toLowerCase()}-${Date.now()}`,
             type,
-            x: 0,
-            y: maxY,
-            w: definition.defaultW,
-            h: definition.defaultH,
+            x: nextLayouts[currentBreakpoint].x,
+            y: nextLayouts[currentBreakpoint].y,
+            w: nextLayouts[currentBreakpoint].w,
+            h: nextLayouts[currentBreakpoint].h,
+            layouts: nextLayouts,
         };
         setWidgets((prev) => [...prev, newWidget]);
         setIsLibraryOpen(false);
@@ -415,13 +549,24 @@ export function DashboardGrid({
                         data={widgetStats.subjectBreakdown}
                     />
                 );
-            case 'ABSENCE_RECOMMENDER':
+            case 'ABSENCE_RECOMMENDER': {
+                const hasRecommenderAccess = canAccessWidget(
+                    userPlan,
+                    'ABSENCE_RECOMMENDER',
+                );
+                const recommenderRequiredPlan = getRequiredPlanForWidget(
+                    'ABSENCE_RECOMMENDER',
+                );
                 return (
                     <AbsenceRecommender
                         data={widgetStats.subjectBreakdown}
-                        isPremium={isPremium}
+                        hasAccess={hasRecommenderAccess}
+                        requiredPlanName={
+                            getPlanConfig(recommenderRequiredPlan).name
+                        }
                     />
                 );
+            }
             case 'TOTAL_ABSENCE_BAR':
                 return (
                     <TotalAbsenceBar
@@ -443,60 +588,59 @@ export function DashboardGrid({
         <div className="w-full">
             {/* Grid */}
             <div className="w-full" ref={containerRef}>
-                {/* Prevent render until we have the container width to avoid layout shift */}
-                {isMounted && containerWidth > 0 && (
-                    <GridLayout
+                {mounted && (
+                    <Responsive
                         className="layout"
-                        layout={layout}
-                        // @ts-expect-error - react-grid-layout types are outdated
-                        cols={COLS}
+                        width={width}
+                        layouts={layouts}
+                        breakpoints={DASHBOARD_BREAKPOINTS}
+                        cols={DASHBOARD_COLS}
                         rowHeight={ROW_HEIGHT}
-                        width={containerWidth}
-                        isDraggable={isEditMode}
-                        isResizable={isEditMode}
+                        dragConfig={{
+                            enabled: isEditMode,
+                            handle: '.widget-drag-handle',
+                        }}
+                        resizeConfig={{ enabled: isEditMode }}
                         onLayoutChange={handleLayoutChange}
-                        draggableHandle=".widget-header"
-                        margin={[16, 16] as [number, number]}
+                        onBreakpointChange={(breakpoint: string) =>
+                            setCurrentBreakpoint(
+                                breakpoint as DashboardDeviceType,
+                            )
+                        }
+                        margin={[16, 16]}
                     >
                         {widgets.map((widget) => (
                             <div
                                 key={widget.id}
-                                className={`bg-white rounded-xl shadow-sm border overflow-hidden ${
-                                    isEditMode ? 'cursor-move' : ''
-                                }`}
+                                className="relative bg-white rounded-xl shadow-sm border overflow-hidden"
                             >
-                                {/* Widget header with remove button in edit mode */}
                                 {isEditMode && (
-                                    <div className="widget-header flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100">
-                                        <span className="text-sm font-medium text-gray-700">
-                                            {WIDGET_DEFINITIONS[widget.type]
-                                                ?.name ??
-                                                `Unknown: ${widget.type}`}
-                                        </span>
-                                        <button
-                                            onClick={() =>
-                                                handleRemoveWidget(widget.id)
-                                            }
-                                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                                            title="Remove widget"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                    <button
+                                        onClick={() =>
+                                            handleRemoveWidget(widget.id)
+                                        }
+                                        className="absolute top-3 right-3 z-10 rounded-md border border-gray-200 bg-white/95 p-1.5 text-gray-400 shadow-sm transition-colors hover:text-red-500"
+                                        title={`Remove ${
+                                            WIDGET_DEFINITIONS[widget.type]
+                                                ?.name ?? 'widget'
+                                        }`}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
                                 )}
                                 {/* Widget content */}
                                 <div
-                                    className={
+                                    className={`h-full ${
                                         isEditMode
-                                            ? 'h-[calc(100%-40px)]'
-                                            : 'h-full'
-                                    }
+                                            ? 'widget-drag-handle cursor-move'
+                                            : ''
+                                    }`}
                                 >
                                     {renderWidgetContent(widget)}
                                 </div>
                             </div>
                         ))}
-                    </GridLayout>
+                    </Responsive>
                 )}
             </div>
 
@@ -527,7 +671,7 @@ export function DashboardGrid({
                 isOpen={isLibraryOpen}
                 onClose={() => setIsLibraryOpen(false)}
                 onAddWidget={handleAddWidget}
-                isPremium={isPremium}
+                userPlan={userPlan}
                 existingWidgets={widgets}
             />
         </div>

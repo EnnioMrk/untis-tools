@@ -13,8 +13,24 @@ datasource db {
 // Enums
 
 enum Plan {
-  FREE
+  BASIC
+  STANDARD
   PREMIUM
+}
+
+enum PlanSource {
+  NONE
+  SUBSCRIPTION
+  TRIAL
+  BONUS
+}
+
+enum ShopTheme {
+  DEFAULT
+  MIDNIGHT
+  SUNSET
+  FOREST
+  AURORA
 }
 
 enum WidgetType {
@@ -39,7 +55,13 @@ model User {
   name          String?
   emailVerified DateTime?
   image         String?
-  plan          Plan      @default(FREE)
+  plan          Plan       @default(BASIC)
+  planSource    PlanSource @default(NONE)
+  isAdmin       Boolean    @default(false)
+  trialEndsAt   DateTime?
+  accessEndsAt  DateTime?
+  referralBonusMonths Int  @default(0)
+  activeTheme   ShopTheme @default(DEFAULT)
   
   // Paddle Integration
   paddleCustomerId     String?
@@ -55,8 +77,14 @@ model User {
   untisConnection UntisConnection?
   userStats       UserStats?
   widgets         Widget[]
+  themePurchases  ThemePurchase[]
+  ownedReferralCode ReferralCode? @relation("UserOwnedReferralCode")
+  redeemedReferral  ReferralRedemption? @relation("RedeemedReferral")
+  adminCreatedReferralCodes ReferralCode[] @relation("AdminCreatedReferralCodes")
+  adminCreatedCouponCodes CouponCode[] @relation("AdminCreatedCouponCodes")
 
   @@index([plan])
+  @@index([isAdmin])
 }
 
 // Auth.js v5 Models
@@ -175,4 +203,70 @@ model Widget {
   
   @@index([userId])
   @@index([type])
+}
+
+model ThemePurchase {
+  id                  String    @id @default(cuid())
+  userId              String
+  theme               ShopTheme
+  priceCents          Int?
+  paddleTransactionId String?   @unique
+  purchasedAt         DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, theme])
+  @@index([userId])
+}
+
+model ReferralCode {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  label           String?
+  isActive        Boolean  @default(true)
+  maxRedemptions  Int?
+  ownerUserId     String?  @unique
+  createdByAdminId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner          User?                @relation("UserOwnedReferralCode", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  createdByAdmin User?                @relation("AdminCreatedReferralCodes", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  redemptions    ReferralRedemption[]
+
+  @@index([isActive])
+  @@index([createdByAdminId])
+}
+
+model ReferralRedemption {
+  id             String   @id @default(cuid())
+  codeId         String
+  referredUserId String   @unique
+  redeemedAt     DateTime @default(now())
+  rewardGrantedAt DateTime?
+
+  code         ReferralCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+  referredUser User         @relation("RedeemedReferral", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  @@index([codeId])
+  @@index([rewardGrantedAt])
+}
+
+model CouponCode {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  description      String?
+  discountPercent  Int?
+  freeMonths       Int      @default(0)
+  isActive         Boolean  @default(true)
+  maxRedemptions   Int?
+  expiresAt        DateTime?
+  createdByAdminId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  createdByAdmin User @relation("AdminCreatedCouponCodes", fields: [createdByAdminId], references: [id], onDelete: Cascade)
+
+  @@index([isActive])
+  @@index([createdByAdminId])
 }

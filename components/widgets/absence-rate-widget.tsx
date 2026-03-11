@@ -6,16 +6,18 @@ interface AbsenceRateWidgetProps {
   absenceRate: number;
   totalAbsences: number;
   totalRealLessons: number;
-  isPremium: boolean;
+  hasAccess: boolean;
+  requiredPlanName?: string;
 }
 
 export function AbsenceRateWidget({
   absenceRate,
   totalAbsences,
   totalRealLessons,
-  isPremium,
+  hasAccess,
+  requiredPlanName = 'Premium',
 }: AbsenceRateWidgetProps) {
-  if (!isPremium) {
+  if (!hasAccess) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full flex flex-col items-center justify-center text-center">
         <div className="bg-gray-100 rounded-full p-4 mb-4">
@@ -25,13 +27,13 @@ export function AbsenceRateWidget({
           Absence Rate Widget
         </h3>
         <p className="text-gray-500 mb-4">
-          This widget is available for Premium users only.
+          This widget is available on the {requiredPlanName} plan.
         </p>
         <button
           onClick={() => window.location.href = '/premium'}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          Upgrade to Premium
+          View plans
         </button>
       </div>
     );

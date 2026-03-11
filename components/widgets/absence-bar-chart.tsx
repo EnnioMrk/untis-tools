@@ -11,6 +11,7 @@ import {
   Cell,
 } from 'recharts';
 import type { SubjectBreakdownItem } from '@/types/widget';
+import { formatSubjectDisplayName } from '@/lib/subject';
 
 interface AbsenceBarChartProps {
   data: SubjectBreakdownItem[];
@@ -36,8 +37,8 @@ export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
 
   // Take top 10 subjects
   const chartData = sortedData.slice(0, 10).map((item) => ({
-    name: item.subject.length > 12 ? item.subject.substring(0, 12) + '...' : item.subject,
-    fullName: item.subject,
+    name: formatSubjectDisplayName(item.subject),
+    fullName: formatSubjectDisplayName(item.subject),
     absences: item.absences,
   }));
 
@@ -59,20 +60,23 @@ export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            margin={{ top: 5, right: 20, left: 0, bottom: 60 }}
+            margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+            barCategoryGap="10%"
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis
               dataKey="name"
-              angle={-45}
-              textAnchor="end"
               interval={0}
               tick={{ fontSize: 11 }}
-              height={60}
+              height={28}
+              padding={{ left: 0, right: 0 }}
+              tickMargin={8}
             />
             <YAxis
               tick={{ fontSize: 12 }}
               allowDecimals={false}
+              width={28}
+              domain={[0, 'dataMax']}
             />
             <Tooltip
               content={({ active, payload }) => {

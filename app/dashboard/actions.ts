@@ -1,6 +1,14 @@
 'use server';
 
 import { auth } from '@/lib/auth';
+import {
+    canAccessWidget,
+    getPlanConfig,
+    getRequiredPlanForWidget,
+    sanitizeWidgetsForPlan,
+    type AppPlan,
+} from '@/lib/plans';
+import { normalizeShopTheme, type ShopThemeId } from '@/lib/shop';
 import { prisma } from '@/lib/prisma';
 import { getUserStatsCache, invalidateUserStatsCache } from '@/lib/cache';
 import { revalidatePath } from 'next/cache';
@@ -10,52 +18,46 @@ import type {
     TrendData,
     SubjectBreakdownItem,
     DailyTrendItem,
-    WidgetType,
+    ResponsiveWidgetLayouts,
 } from '@/types/widget';
-import { DEFAULT_WIDGETS, WIDGET_DEFINITIONS } from '@/types/widget';
+import {
+    DEFAULT_WIDGETS,
+    WIDGET_DEFINITIONS,
+    normalizeWidgetData,
+} from '@/types/widget';
 import { triggerImmediateSync } from '@/lib/sync';
 import { getSchoolYearStart } from '@/lib/school-year';
-
-// Constants for plan limits
-const FREE_MAX_WIDGETS = 5;
-
-/**
- * Get premium widget types
- */
-function getPremiumWidgetTypes(): WidgetType[] {
-    return (Object.keys(WIDGET_DEFINITIONS) as WidgetType[]).filter(
-        (type) => WIDGET_DEFINITIONS[type].isPremium,
-    );
-}
+import { getUserAccessState } from '@/lib/subscription';
 
 /**
  * Validate widget layout based on user's plan
  */
 function validateWidgetLayout(
     widgets: WidgetData[],
-    userPlan: 'FREE' | 'PREMIUM',
+    userPlan: AppPlan,
 ): { valid: boolean; error?: string } {
-    // Check widget count limit for FREE users
-    if (userPlan === 'FREE' && widgets.length > FREE_MAX_WIDGETS) {
+    const planConfig = getPlanConfig(userPlan);
+
+    if (
+        planConfig.features.maxWidgets !== null &&
+        widgets.length > planConfig.features.maxWidgets
+    ) {
         return {
             valid: false,
-            error: `Free plan is limited to ${FREE_MAX_WIDGETS} widgets. Please remove some widgets or upgrade to Premium.`,
+            error: `${planConfig.name} is limited to ${planConfig.features.maxWidgets} widgets. Please remove some widgets or upgrade your plan.`,
         };
     }
 
-    // Check premium widgets for FREE users
-    if (userPlan === 'FREE') {
-        const premiumTypes = getPremiumWidgetTypes();
-        const hasPremiumWidget = widgets.some((widget) =>
-            premiumTypes.includes(widget.type as WidgetType),
-        );
+    const lockedWidget = widgets.find(
+        (widget) => !canAccessWidget(userPlan, widget.type),
+    );
 
-        if (hasPremiumWidget) {
-            return {
-                valid: false,
-                error: 'Some widgets require Premium. Please upgrade to Premium or remove these widgets.',
-            };
-        }
+    if (lockedWidget) {
+        const requiredPlan = getRequiredPlanForWidget(lockedWidget.type);
+        return {
+            valid: false,
+            error: `${WIDGET_DEFINITIONS[lockedWidget.type].name} requires the ${getPlanConfig(requiredPlan).name} plan.`,
+        };
     }
 
     return { valid: true };
@@ -141,7 +143,16 @@ export async function getUserStats(
     ) {
         // Convert from Record format to array
         subjectBreakdown = Object.entries(
-            userStats.subjectBreakdown as Record<string, any>,
+            userStats.subjectBreakdown as Record<
+                string,
+                {
+                    total?: number;
+                    attended?: number;
+                    absences?: number;
+                    cancelled?: number;
+                    absenceRate?: number;
+                }
+            >,
         ).map(([subject, data]) => ({
             subject,
             total: data.total || 0,
@@ -200,8 +211,22 @@ export async function getUserStats(
 export async function getUserWidgets(): Promise<WidgetData[]> {
     const session = await auth();
     if (!session?.user?.id) {
-        return DEFAULT_WIDGETS;
+        return sanitizeWidgetsForPlan(DEFAULT_WIDGETS, 'BASIC');
     }
+
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+            id: true,
+            plan: true,
+            planSource: true,
+            isAdmin: true,
+            trialEndsAt: true,
+            accessEndsAt: true,
+            referralBonusMonths: true,
+        },
+    });
+    const userPlan = (user ? getUserAccessState(user).effectivePlan : 'BASIC') as AppPlan;
 
     const widgets = await prisma.widget.findMany({
         where: { userId: session.user.id },
@@ -209,33 +234,73 @@ export async function getUserWidgets(): Promise<WidgetData[]> {
     });
 
     if (widgets.length === 0) {
-        return DEFAULT_WIDGETS;
+        return sanitizeWidgetsForPlan(DEFAULT_WIDGETS, userPlan);
     }
 
-    return widgets.map(
+    const normalizedWidgets = widgets.map(
         (widget: {
             id: string;
             type: string;
             layoutData: unknown;
             config: unknown;
         }) => {
-            const layoutData = widget.layoutData as {
-                x: number;
-                y: number;
-                w: number;
-                h: number;
+            const layoutData = widget.layoutData as
+                | {
+                      x?: number;
+                      y?: number;
+                      w?: number;
+                      h?: number;
+                      desktop?: {
+                          x: number;
+                          y: number;
+                          w: number;
+                          h: number;
+                      };
+                      tablet?: {
+                          x: number;
+                          y: number;
+                          w: number;
+                          h: number;
+                      };
+                      mobile?: {
+                          x: number;
+                          y: number;
+                          w: number;
+                          h: number;
+                      };
+                  }
+                | null;
+
+            const layouts =
+                layoutData?.desktop && layoutData?.tablet && layoutData?.mobile
+                    ? ({
+                          desktop: layoutData.desktop,
+                          tablet: layoutData.tablet,
+                          mobile: layoutData.mobile,
+                      } as ResponsiveWidgetLayouts)
+                    : undefined;
+
+            const desktopLayout = layouts?.desktop ?? {
+                x: layoutData?.x ?? 0,
+                y: layoutData?.y ?? 0,
+                w: layoutData?.w ?? 1,
+                h: layoutData?.h ?? 1,
             };
+
             return {
                 id: widget.id,
                 type: widget.type as WidgetData['type'],
-                x: layoutData.x,
-                y: layoutData.y,
-                w: layoutData.w,
-                h: layoutData.h,
+                x: desktopLayout.x,
+                y: desktopLayout.y,
+                w: desktopLayout.w,
+                h: desktopLayout.h,
+                layouts,
                 config: (widget.config as Record<string, unknown>) || undefined,
             };
         },
     );
+
+    return sanitizeWidgetsForPlan(normalizeWidgetData(normalizedWidgets), userPlan);
 }
 
 /**
@@ -253,10 +318,18 @@ export async function saveWidgetLayout(
         // Get user's current plan
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { plan: true },
+            select: {
+                id: true,
+                plan: true,
+                planSource: true,
+                isAdmin: true,
+                trialEndsAt: true,
+                accessEndsAt: true,
+                referralBonusMonths: true,
+            },
         });
 
-        const userPlan = user?.plan || 'FREE';
+        const userPlan = (user ? getUserAccessState(user).effectivePlan : 'BASIC') as AppPlan;
 
         // Validate widget layout based on user's plan
         const validation = validateWidgetLayout(widgets, userPlan);
@@ -279,11 +352,25 @@ export async function saveWidgetLayout(
                     data: {
                         userId: session.user.id,
                         type: widget.type,
-                        layoutData: {
-                            x: widget.x,
-                            y: widget.y,
-                            w: widget.w,
-                            h: widget.h,
+                        layoutData: widget.layouts || {
+                            desktop: {
+                                x: widget.x,
+                                y: widget.y,
+                                w: widget.w,
+                                h: widget.h,
+                            },
+                            tablet: {
+                                x: widget.x,
+                                y: widget.y,
+                                w: Math.min(widget.w, 2),
+                                h: widget.h,
+                            },
+                            mobile: {
+                                x: 0,
+                                y: widget.y,
+                                w: 1,
+                                h: widget.h,
+                            },
                         },
                         config: widget.config || null,
                         order: i,
@@ -318,18 +405,48 @@ export async function hasUntisConnection(): Promise<boolean> {
 /**
  * Get the current user's plan
  */
-export async function getUserPlan(): Promise<'FREE' | 'PREMIUM'> {
+export async function getUserPlan(): Promise<AppPlan> {
     const session = await auth();
     if (!session?.user?.id) {
-        return 'FREE';
+        return 'BASIC';
     }
 
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { plan: true },
+        select: {
+            id: true,
+            plan: true,
+            planSource: true,
+            isAdmin: true,
+            trialEndsAt: true,
+            accessEndsAt: true,
+            referralBonusMonths: true,
+        },
     });
 
-    return user?.plan || 'FREE';
+    return (user ? getUserAccessState(user).effectivePlan : 'BASIC') as AppPlan;
+}
+
+/**
+ * Get the current user's active shop theme.
+ */
+export async function getUserTheme(): Promise<ShopThemeId> {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return 'DEFAULT';
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { activeTheme: true },
+        });
+
+        return normalizeShopTheme(user?.activeTheme);
+    } catch (error) {
+        console.error('[getUserTheme] Falling back to DEFAULT theme:', error);
+        return 'DEFAULT';
+    }
 }
 
 /**

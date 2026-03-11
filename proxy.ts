@@ -11,6 +11,7 @@ export default auth((req) => {
         "/onboarding",
         "/timetable",
         "/premium",
+        "/admin",
         "/dev",
     ];
     const isProtectedRoute = protectedRoutes.some((route) =>
@@ -37,6 +38,7 @@ export const config = {
         "/onboarding/:path*",
         "/timetable/:path*",
         "/premium/:path*",
+        "/admin/:path*",
         "/dev/:path*",
         "/auth/signin",
     ],

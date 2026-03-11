@@ -2,18 +2,34 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { initializePaddle, type Paddle } from '@paddle/paddle-js';
+import { getPlanConfig, isPlanAtLeast, type AppPlan, type PaidPlan } from '@/lib/plans';
+import type { PlanSource } from '@prisma/client';
 import { openCheckout } from '@/app/premium/actions';
-import { Sparkles, Crown, Loader2 } from 'lucide-react';
+import { Sparkles, Crown, Loader2, Star } from 'lucide-react';
 
 interface PremiumButtonProps {
-  isPremium: boolean;
+  currentPlan: AppPlan;
+  targetPlan: PaidPlan;
+  planSource?: PlanSource;
+  hasActiveAccess?: boolean;
   className?: string;
 }
 
-export function PremiumButton({ isPremium, className = '' }: PremiumButtonProps) {
+export function PlanButton({
+  currentPlan,
+  targetPlan,
+  planSource = 'NONE',
+  hasActiveAccess = false,
+  className = '',
+}: PremiumButtonProps) {
   const [paddle, setPaddle] = useState<Paddle | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const targetPlanConfig = getPlanConfig(targetPlan);
+  const hasCurrentOrHigherPlan =
+    hasActiveAccess && planSource === 'SUBSCRIPTION' && isPlanAtLeast(currentPlan, targetPlan);
+  const isCurrentPlan = hasActiveAccess && planSource === 'SUBSCRIPTION' && currentPlan === targetPlan;
+  const isTrialPlan = hasActiveAccess && planSource === 'TRIAL' && targetPlan === 'PREMIUM';
 
   // Initialize Paddle on mount
   useEffect(() => {
@@ -42,7 +58,7 @@ export function PremiumButton({ isPremium, className = '' }: PremiumButtonProps)
     setError(null);
 
     try {
-      const result = await openCheckout();
+      const result = await openCheckout(targetPlan);
 
       if (!result.success) {
         setError(result.error || 'Failed to start checkout');
@@ -67,16 +83,36 @@ export function PremiumButton({ isPremium, className = '' }: PremiumButtonProps)
     } finally {
       setLoading(false);
     }
-  }, [paddle]);
+  }, [paddle, targetPlan]);
 
-  if (isPremium) {
+  if (hasCurrentOrHigherPlan) {
     return (
       <button
         disabled
-        className={`w-full py-3 px-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-medium rounded-lg flex items-center justify-center gap-2 ${className}`}
+        className={`w-full py-3 px-6 text-white font-medium rounded-lg flex items-center justify-center gap-2 ${
+          currentPlan === 'PREMIUM'
+            ? 'bg-gradient-to-r from-yellow-400 to-orange-500'
+            : 'bg-gradient-to-r from-blue-500 to-cyan-600'
+        } ${className}`}
       >
-        <Crown className="w-5 h-5" />
-        Premium Active
+        {isCurrentPlan ? (
+          currentPlan === 'PREMIUM' ? <Crown className="w-5 h-5" /> : <Star className="w-5 h-5" />
+        ) : (
+          <Crown className="w-5 h-5" />
+        )}
+        {isCurrentPlan ? `${targetPlanConfig.name} Active` : 'Included in your current plan'}
+      </button>
+    );
+  }
+
+  if (isTrialPlan) {
+    return (
+      <button
+        disabled
+        className={`w-full py-3 px-6 text-white font-medium rounded-lg flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-600 ${className}`}
+      >
+        <Sparkles className="w-5 h-5" />
+        Premium trial active
       </button>
     );
   }
@@ -91,7 +127,11 @@ export function PremiumButton({ isPremium, className = '' }: PremiumButtonProps)
       <button
         onClick={handleCheckout}
         disabled={loading || !paddle}
-        className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-blue-400 disabled:to-purple-400 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
+        className={`w-full py-3 px-6 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${
+          targetPlan === 'PREMIUM'
+            ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-blue-400 disabled:to-purple-400'
+            : 'bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black disabled:from-slate-500 disabled:to-slate-600'
+        }`}
       >
         {loading ? (
           <>
@@ -100,8 +140,12 @@ export function PremiumButton({ isPremium, className = '' }: PremiumButtonProps)
           </>
         ) : (
           <>
-            <Sparkles className="w-5 h-5" />
-            Go Premium
+            {targetPlan === 'PREMIUM' ? (
+              <Sparkles className="w-5 h-5" />
+            ) : (
+              <Star className="w-5 h-5" />
+            )}
+            {targetPlanConfig.ctaLabel}
           </>
         )}
       </button>

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { TimetableClient } from './timetable-client';
 import { getTimetableForWeek, hasUntisConnection } from './actions';
 import { auth } from '@/lib/auth';
+import { ensureActiveSubscriptionAccess } from '@/lib/subscription';
 import type { UntisLesson, UntisAbsence } from '@/worker/types';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +40,8 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     if (!session?.user?.id) {
         redirect('/auth/signin');
     }
+
+    await ensureActiveSubscriptionAccess(session.user.id);
 
     // Check if user has an Untis connection
     const hasConnection = await hasUntisConnection();

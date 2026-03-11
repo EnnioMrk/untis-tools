@@ -1,5 +1,7 @@
 import { Paddle, Environment, type Customer, type Transaction } from '@paddle/paddle-node-sdk';
 import { WebhooksValidator } from '@paddle/paddle-node-sdk';
+import type { PaidPlan } from '@/lib/plans';
+import type { ShopThemeId } from '@/lib/shop';
 
 // Initialize Paddle SDK client
 const paddleApiKey = process.env.PADDLE_API_KEY;
@@ -64,7 +66,11 @@ export async function getCustomer(customerId: string): Promise<Customer | null> 
  */
 export async function createCheckout(
   customerId: string,
-  priceId: string
+  priceId: string,
+  options: {
+    userId: string;
+    plan: PaidPlan;
+  },
 ): Promise<Transaction | null> {
   if (!paddleClient) {
     throw new Error('Paddle client is not initialized');
@@ -81,12 +87,51 @@ export async function createCheckout(
       ],
       customData: {
         customerId,
+        userId: options.userId,
+        plan: options.plan,
+        purchaseType: 'SUBSCRIPTION',
       },
     });
 
     return transaction;
   } catch (error) {
     console.error('Failed to create checkout transaction:', error);
+    throw error;
+  }
+}
+
+export async function createThemeCheckout(
+  customerId: string,
+  priceId: string,
+  options: {
+    userId: string;
+    themeId: ShopThemeId;
+  },
+): Promise<Transaction | null> {
+  if (!paddleClient) {
+    throw new Error('Paddle client is not initialized');
+  }
+
+  try {
+    const transaction = await paddleClient.transactions.create({
+      customerId,
+      items: [
+        {
+          priceId,
+          quantity: 1,
+        },
+      ],
+      customData: {
+        customerId,
+        userId: options.userId,
+        themeId: options.themeId,
+        purchaseType: 'THEME',
+      },
+    });
+
+    return transaction;
+  } catch (error) {
+    console.error('Failed to create theme checkout transaction:', error);
     throw error;
   }
 }
@@ -167,10 +212,68 @@ export async function verifyWebhookSignature(signature: string, body: string): P
 /**
  * Get the price ID from environment
  */
-export function getPriceId(): string {
-  const priceId = process.env.PADDLE_PRICE_ID;
+export function getPriceId(plan: PaidPlan): string {
+  const priceId =
+    plan === 'BASIC'
+      ? process.env.PADDLE_BASIC_PRICE_ID
+      : plan === 'STANDARD'
+        ? process.env.PADDLE_STANDARD_PRICE_ID
+        : process.env.PADDLE_PREMIUM_PRICE_ID || process.env.PADDLE_PRICE_ID;
+
   if (!priceId) {
-    throw new Error('PADDLE_PRICE_ID is not set');
+    throw new Error(
+      plan === 'BASIC'
+        ? 'PADDLE_BASIC_PRICE_ID is not set'
+        : plan === 'STANDARD'
+          ? 'PADDLE_STANDARD_PRICE_ID is not set'
+          : 'PADDLE_PREMIUM_PRICE_ID is not set',
+    );
   }
   return priceId;
+}
+
+export function getThemePriceId(themeId: ShopThemeId): string {
+  const priceMap: Record<Exclude<ShopThemeId, 'DEFAULT'>, string | undefined> = {
+    MIDNIGHT: process.env.PADDLE_THEME_MIDNIGHT_PRICE_ID,
+    SUNSET: process.env.PADDLE_THEME_SUNSET_PRICE_ID,
+    FOREST: process.env.PADDLE_THEME_FOREST_PRICE_ID,
+    AURORA: process.env.PADDLE_THEME_AURORA_PRICE_ID,
+  };
+
+  if (themeId === 'DEFAULT') {
+    throw new Error('Default theme does not require a price ID');
+  }
+
+  const priceId = priceMap[themeId];
+
+  if (!priceId) {
+    throw new Error(`Price ID for theme ${themeId} is not set`);
+  }
+
+  return priceId;
+}
+
+export function resolvePlanFromPriceId(
+  priceId: string | null | undefined,
+): PaidPlan | null {
+  if (!priceId) {
+    return null;
+  }
+
+  if (priceId === process.env.PADDLE_BASIC_PRICE_ID) {
+    return 'BASIC';
+  }
+
+  if (priceId === process.env.PADDLE_STANDARD_PRICE_ID) {
+    return 'STANDARD';
+  }
+
+  if (
+    priceId === process.env.PADDLE_PREMIUM_PRICE_ID ||
+    priceId === process.env.PADDLE_PRICE_ID
+  ) {
+    return 'PREMIUM';
+  }
+
+  return null;
 }

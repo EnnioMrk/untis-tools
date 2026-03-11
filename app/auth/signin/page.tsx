@@ -124,6 +124,27 @@ export default function SignInPage() {
               />
             </div>
 
+            {!isLogin && (
+              <div>
+                <label
+                  htmlFor="referralCode"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Referral-Code (optional)
+                </label>
+                <input
+                  type="text"
+                  id="referralCode"
+                  name="referralCode"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all uppercase"
+                  placeholder="REF-AB12CD34"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Mit einem gültigen Referral-Code startest du mit einem kostenlosen Premium-Monat.
+                </p>
+              </div>
+            )}
+
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <p className="text-sm text-red-600 dark:text-red-400">

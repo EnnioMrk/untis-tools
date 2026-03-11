@@ -11,6 +11,7 @@ import {
   Legend,
 } from 'recharts';
 import type { SubjectBreakdownItem } from '@/types/widget';
+import { formatSubjectDisplayName } from '@/lib/subject';
 
 interface SubjectBreakdownChartProps {
   data: SubjectBreakdownItem[];
@@ -20,8 +21,8 @@ export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
   // Sort data by total lessons descending and take top 8
   const sortedData = [...data].sort((a, b) => b.total - a.total);
   const chartData = sortedData.slice(0, 8).map((item) => ({
-    name: item.subject.length > 15 ? item.subject.substring(0, 15) + '...' : item.subject,
-    fullName: item.subject,
+    name: formatSubjectDisplayName(item.subject),
+    fullName: formatSubjectDisplayName(item.subject),
     Attended: item.attended,
     Absences: item.absences,
     Cancelled: item.cancelled,
@@ -39,25 +40,27 @@ export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full flex flex-col">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Subject Breakdown</h3>
-      <div className="h-[calc(100%-3rem)]">
+      <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             layout="vertical"
             data={chartData}
-            margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+            margin={{ top: 0, right: 8, left: -16, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={true} vertical={false} />
             <XAxis
               type="number"
               tick={{ fontSize: 12 }}
+              allowDecimals={false}
             />
             <YAxis
               type="category"
               dataKey="name"
               tick={{ fontSize: 11 }}
-              width={100}
+              width={56}
+              interval={0}
             />
             <Tooltip
               content={({ active, payload }) => {

@@ -39,12 +39,12 @@
 >
 > ---
 >
-> **Premium Plan & Payments (Paddle Billing)**
-> Integrate Paddle Billing as the Merchant of Record. The User Prisma model has a `plan` field (enum: `FREE` | `PREMIUM`), `paddleCustomerId`, and `paddleSubscriptionId`. Free users are limited to 5 widgets; Premium users get unlimited widgets and access to additional themes.
+> **Plans & Payments (Paddle Billing)**
+> Integrate Paddle Billing as the Merchant of Record. The User Prisma model has a `plan` field (enum: `FREE` | `STANDARD` | `PREMIUM`), `paddleCustomerId`, and `paddleSubscriptionId`. Basic users are limited to 5 widgets, Standard users to 10 widgets, and Premium users get unlimited widgets plus premium-only features.
 >
-> - **Checkout:** A "Go Premium" button calls a Next.js Server Action that opens the Paddle Checkout overlay using `@paddle/paddle-js`. Pass the user's DB `id` as `customData`.
-> - **Webhook:** A Next.js API Route at `app/api/webhooks/paddle/route.ts` uses `@paddle/paddle-node` to verify the Paddle signature. Upgrade to `PREMIUM` on `subscription.activated`; downgrade to `FREE` on `subscription.canceled`.
-> - **Server-Side Enforcement:** The "Save Layout" Server Action must read the user's `plan` from PostgreSQL *before* saving. If a FREE user tries to save >5 widgets, throw an error. Premium widget types from the library are locked for FREE users.
+> - **Checkout:** Plan buttons call a Next.js Server Action that opens the Paddle Checkout overlay using `@paddle/paddle-js`. Pass the user's DB `id` and target plan as `customData`.
+> - **Webhook:** A Next.js API Route at `app/api/webhooks/paddle/route.ts` uses `@paddle/paddle-node` to verify the Paddle signature. Upgrade to the paid plan from the webhook payload and downgrade to `FREE` on `subscription.canceled`.
+> - **Server-Side Enforcement:** The "Save Layout" Server Action must read the user's `plan` from PostgreSQL *before* saving. Widget limits and widget availability must come from shared plan config instead of hardcoded free/premium rules.
 >
 > ---
 >

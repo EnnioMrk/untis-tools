@@ -1,14 +1,15 @@
 'use client';
 
+import { canAccessWidget, getPlanConfig, getRequiredPlanForWidget, type AppPlan } from '@/lib/plans';
 import { X, Plus, Lock, Calendar, Clock, BarChart3, Infinity, TrendingUp, Layers, AlertTriangle, Activity } from 'lucide-react';
 import type { WidgetType, WidgetData } from '@/types/widget';
-import { WIDGET_DEFINITIONS } from '@/types/widget';
+import { WIDGET_DEFINITIONS, getWidgetSizeLabel } from '@/types/widget';
 
 interface WidgetLibraryProps {
   isOpen: boolean;
   onClose: () => void;
   onAddWidget: (type: WidgetType) => void;
-  isPremium: boolean;
+  userPlan: AppPlan;
   existingWidgets: WidgetData[];
 }
 
@@ -29,12 +30,16 @@ export function WidgetLibrary({
   isOpen,
   onClose,
   onAddWidget,
-  isPremium,
+  userPlan,
   existingWidgets,
 }: WidgetLibraryProps) {
   if (!isOpen) return null;
 
   const widgetTypes = Object.keys(WIDGET_DEFINITIONS) as WidgetType[];
+  const planConfig = getPlanConfig(userPlan);
+  const maxWidgets = planConfig.features.maxWidgets;
+  const isAtWidgetLimit =
+    maxWidgets !== null && existingWidgets.length >= maxWidgets;
 
   const isWidgetAdded = (type: WidgetType) => {
     return existingWidgets.some((w) => w.type === type);
@@ -67,7 +72,9 @@ export function WidgetLibrary({
             {widgetTypes.map((type) => {
               const definition = WIDGET_DEFINITIONS[type];
               const isAdded = isWidgetAdded(type);
-              const isLocked = definition.isPremium && !isPremium;
+              const isLocked = !canAccessWidget(userPlan, type);
+              const requiredPlan = getRequiredPlanForWidget(type);
+              const disableAdd = isAdded || isLocked || isAtWidgetLimit;
 
               return (
                 <div
@@ -96,7 +103,7 @@ export function WidgetLibrary({
                         {isLocked && (
                           <span className="flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
                             <Lock className="w-3 h-3" />
-                            Premium
+                            {getPlanConfig(requiredPlan).name}
                           </span>
                         )}
                         {isAdded && !isLocked && (
@@ -107,20 +114,22 @@ export function WidgetLibrary({
                       </div>
                       <p className="text-sm text-gray-500 mt-1">{definition.description}</p>
                       <p className="text-xs text-gray-400 mt-1">
-                        Size: {definition.defaultW === 2 ? 'Full width' : 'Half width'} × {definition.defaultH} rows
+                        {getWidgetSizeLabel(type)}
                       </p>
                     </div>
                     {!isLocked && (
                       <button
                         onClick={() => {
-                          if (!isAdded) {
+                          if (!disableAdd) {
                             onAddWidget(type);
                           }
                         }}
-                        disabled={isAdded}
+                        disabled={disableAdd}
                         className={`p-2 rounded-lg transition-colors ${
                           isAdded
                             ? 'bg-green-100 text-green-600 cursor-default'
+                            : isAtWidgetLimit
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             : 'bg-blue-600 text-white hover:bg-blue-700'
                         }`}
                       >
@@ -141,7 +150,9 @@ export function WidgetLibrary({
         {/* Footer */}
         <div className="p-6 border-t border-gray-100 bg-gray-50">
           <p className="text-sm text-gray-500 text-center">
-            Click on a widget to add it to your dashboard
+            {maxWidgets === null
+              ? 'You can add as many widgets as you like on this plan.'
+              : `You can add up to ${maxWidgets} widgets on the ${planConfig.name} plan.`}
           </p>
         </div>
       </div>

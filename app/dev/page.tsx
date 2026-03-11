@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
+import { ensureActiveSubscriptionAccess } from '@/lib/subscription';
 import { getRawUntisData, getStoredUserStats, type UntisDataFilter } from './actions';
 import { DevTestClient } from './dev-client';
 
@@ -21,6 +22,8 @@ export default async function DevTestPage({
   if (!session?.user?.id) {
     redirect('/auth/signin');
   }
+
+  await ensureActiveSubscriptionAccess(session.user.id);
 
   // Get filter params from URL
   const params = await searchParams;

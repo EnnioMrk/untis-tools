@@ -2,10 +2,12 @@
 
 import { AlertTriangle, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import type { SubjectBreakdownItem } from '@/types/widget';
+import { formatSubjectDisplayName } from '@/lib/subject';
 
 interface AbsenceRecommenderProps {
   data: SubjectBreakdownItem[];
-  isPremium: boolean;
+  hasAccess: boolean;
+  requiredPlanName?: string;
 }
 
 type Severity = 'critical' | 'warning' | 'caution' | 'good';
@@ -13,13 +15,13 @@ type Severity = 'critical' | 'warning' | 'caution' | 'good';
 interface SubjectCardProps {
   subject: string;
   absenceRate: number;
-  total: number;
+  realLessons: number;
   absences: number;
   severity: Severity;
-  isPremium: boolean;
+  hasAccess: boolean;
 }
 
-function SubjectCard({ subject, absenceRate, total, absences, severity, isPremium }: SubjectCardProps) {
+function SubjectCard({ subject, absenceRate, realLessons, absences, severity, hasAccess }: SubjectCardProps) {
   const getSeverityStyles = () => {
     switch (severity) {
       case 'critical':
@@ -60,7 +62,7 @@ function SubjectCard({ subject, absenceRate, total, absences, severity, isPremiu
   const styles = getSeverityStyles();
 
   // Calculate how many more absences they can afford (assuming 25% max safe rate)
-  const maxSafeAbsences = Math.floor(total * 0.25);
+  const maxSafeAbsences = Math.floor(realLessons * 0.25);
   const remainingAbsences = Math.max(0, maxSafeAbsences - absences);
 
   return (
@@ -81,11 +83,11 @@ function SubjectCard({ subject, absenceRate, total, absences, severity, isPremiu
           </div>
         </div>
         <div className="text-right">
-          <p className="text-lg font-bold text-gray-900">{absences}/{total}</p>
+          <p className="text-lg font-bold text-gray-900">{absences}/{realLessons}</p>
           <p className="text-xs text-gray-500">absences</p>
         </div>
       </div>
-      {severity === 'good' && isPremium && (
+      {severity === 'good' && hasAccess && (
         <p className="text-xs text-green-600 mt-2">
           Can miss up to {remainingAbsences} more lesson{remainingAbsences !== 1 ? 's' : ''}
         </p>
@@ -101,7 +103,7 @@ function getSeverity(absenceRate: number): Severity {
   return 'good';
 }
 
-export function AbsenceRecommender({ data, isPremium }: AbsenceRecommenderProps) {
+export function AbsenceRecommender({ data, hasAccess, requiredPlanName = 'Premium' }: AbsenceRecommenderProps) {
   // Sort by absence rate descending
   const sortedData = [...data].sort((a, b) => b.absenceRate - a.absenceRate);
 
@@ -120,36 +122,36 @@ export function AbsenceRecommender({ data, isPremium }: AbsenceRecommenderProps)
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Absence Recommender</h3>
-        {!isPremium && (
+        {!hasAccess && (
           <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
-            Premium
+            {requiredPlanName}
           </span>
         )}
       </div>
       
-      {!isPremium ? (
+      {!hasAccess ? (
         <div className="flex flex-col items-center justify-center h-[calc(100%-3rem)] text-center">
           <div className="bg-gray-50 rounded-lg p-6 max-w-sm">
             <h4 className="font-medium text-gray-900 mb-2">Unlock Absence Recommender</h4>
             <p className="text-sm text-gray-600 mb-4">
-              See which subjects you can safely miss without exceeding your absence limit.
+              See which subjects you can safely miss without exceeding your absence limit on the {requiredPlanName} plan.
             </p>
             <button className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
-              Upgrade to Premium
+              View plans
             </button>
           </div>
         </div>
       ) : (
-        <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2">
+        <div className="space-y-3 overflow-y-auto max-h-100 pr-2">
           {sortedData.map((item) => (
             <SubjectCard
               key={item.subject}
-              subject={item.subject}
+              subject={formatSubjectDisplayName(item.subject)}
               absenceRate={item.absenceRate}
-              total={item.total}
+              realLessons={Math.max(0, item.total - item.cancelled)}
               absences={item.absences}
               severity={getSeverity(item.absenceRate)}
-              isPremium={isPremium}
+              hasAccess={hasAccess}
             />
           ))}
         </div>

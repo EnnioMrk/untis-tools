@@ -1,232 +1,258 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Check, Clock3, Gift, ShieldAlert, Sparkles } from 'lucide-react';
 import { auth } from '@/lib/auth';
+import { getAvailablePlans, type AppPlan } from '@/lib/plans';
 import { prisma } from '@/lib/prisma';
-import { PremiumButton } from '@/components/premium/premium-button';
+import { PlanButton } from '@/components/premium/premium-button';
 import { PremiumBadge } from '@/components/premium/premium-badge';
-import { Check, X, Sparkles } from 'lucide-react';
+import { ReferralCodeCard } from '@/components/premium/referral-code-card';
+import { formatPlanName, formatPlanSource, getUserAccessState } from '@/lib/subscription';
+
+function formatDate(value: Date | null) {
+  if (!value) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat('de-DE', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(value);
+}
 
 export default async function PremiumPage() {
   const session = await auth();
 
-  // If not logged in, redirect to signin
   if (!session?.user?.id) {
     redirect('/auth/signin');
   }
 
-  // Get user's current plan
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
+      id: true,
       plan: true,
-      paddleCustomerId: true,
-      paddleSubscriptionId: true,
+      planSource: true,
+      trialEndsAt: true,
+      accessEndsAt: true,
+      referralBonusMonths: true,
+      ownedReferralCode: {
+        select: {
+          code: true,
+        },
+      },
+      redeemedReferral: {
+        select: {
+          code: {
+            select: {
+              code: true,
+            },
+          },
+        },
+      },
     },
   });
 
-  const isPremium = user?.plan === 'PREMIUM';
+  if (!user) {
+    redirect('/auth/signin');
+  }
 
-  const freeFeatures = [
-    { text: 'Up to 5 widgets', included: true },
-    { text: 'Basic themes', included: true },
-    { text: '7-day statistics', included: true },
-    { text: 'Absence tracking', included: true },
-    { text: 'Premium widgets', included: false },
-    { text: 'Unlimited widgets', included: false },
-    { text: 'Premium themes', included: false },
-    { text: 'Priority support', included: false },
-  ];
+  const accessState = getUserAccessState({
+    id: user.id,
+    plan: user.plan,
+    planSource: user.planSource,
+    isAdmin: false,
+    trialEndsAt: user.trialEndsAt,
+    accessEndsAt: user.accessEndsAt,
+    referralBonusMonths: user.referralBonusMonths,
+  });
+  const currentPlan = user.plan as AppPlan;
+  const effectivePlan = accessState.effectivePlan as AppPlan;
+  const plans = getAvailablePlans();
+  const comparisonRows = [
+    { name: 'Dashboard Widgets', key: 'dashboardWidgets' },
+    { name: 'Widget Types', key: 'widgetTypes' },
+    { name: 'Themes', key: 'themes' },
+    { name: 'Statistics Range', key: 'statisticsRange' },
+    { name: 'Data Export', key: 'dataExport' },
+    { name: 'Priority Support', key: 'prioritySupport' },
+    { name: 'Early Access', key: 'earlyAccess' },
+  ] as const;
 
-  const premiumFeatures = [
-    { text: 'Unlimited widgets', included: true },
-    { text: 'All premium widgets', included: true },
-    { text: 'Premium themes', included: true },
-    { text: 'Priority support', included: true },
-    { text: 'Advanced analytics', included: true },
-    { text: 'Custom widget layouts', included: true },
-    { text: 'Export data', included: true },
-    { text: 'Early access to new features', included: true },
-  ];
+  const statusText = accessState.trialActive
+    ? `Premium trial active until ${formatDate(user.trialEndsAt)}`
+    : accessState.bonusActive
+      ? `Bonus month active until ${formatDate(user.accessEndsAt)}`
+      : accessState.hasAccess
+        ? `${formatPlanName(currentPlan)} subscription active`
+        : 'No active subscription';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Sparkles className="w-8 h-8 text-yellow-500" />
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-              Go Premium
-            </h1>
-          </div>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Unlock the full potential of UntisStats with unlimited widgets, premium themes, and priority support.
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50 px-4 py-12 dark:bg-gray-900">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+        <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+                <Sparkles className="h-4 w-4" />
+                Subscriptions
+              </div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Choose your plan</h1>
+              <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
+                UntisStats is a subscription product with three paid tiers: Basic, Standard, and Premium.
+                Referral signups receive one free Premium month before a subscription is required.
+              </p>
+            </div>
 
-        {/* Current Status */}
-        {isPremium && (
-          <div className="mb-8 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-center">
-            <p className="text-green-700 dark:text-green-400 font-medium">
-              🎉 You are already a Premium member! Enjoy all the premium features.
+            {!accessState.hasAccess && (
+              <Link
+                href="/premium/trial-ended"
+                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-black dark:bg-white dark:text-slate-900"
+              >
+                View renewal prompt
+              </Link>
+            )}
+          </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <Sparkles className="h-4 w-4" />
+              Effective access
+            </div>
+            <div className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">{formatPlanName(effectivePlan)}</div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{statusText}</p>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <Clock3 className="h-4 w-4" />
+              Billing source
+            </div>
+            <div className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">{formatPlanSource(user.planSource)}</div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Selected tier: <strong>{formatPlanName(currentPlan)}</strong>
             </p>
           </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <Gift className="h-4 w-4" />
+              Referral bonuses
+            </div>
+            <div className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">{user.referralBonusMonths}</div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Queued bonus months unlock after your current paid billing cycle ends.
+            </p>
+          </div>
+        </section>
+
+        {!accessState.hasAccess && (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
+              <div>
+                <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">Subscription required</h2>
+                <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
+                  Your trial or bonus access is no longer active. Choose a plan below to continue using the app.
+                </p>
+              </div>
+            </div>
+          </section>
         )}
 
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 mb-12">
-          {/* Free Plan */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Free
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Perfect for getting started
-            </p>
-            <div className="mb-6">
-              <span className="text-4xl font-bold text-gray-900 dark:text-white">€0</span>
-              <span className="text-gray-600 dark:text-gray-400">/month</span>
-            </div>
-            <ul className="space-y-3">
-              {freeFeatures.map((feature, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  {feature.included ? (
-                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  ) : (
-                    <X className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  )}
-                  <span
-                    className={
-                      feature.included
-                        ? 'text-gray-700 dark:text-gray-300'
-                        : 'text-gray-400 dark:text-gray-500'
-                    }
-                  >
-                    {feature.text}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <section className="grid gap-8 md:grid-cols-3">
+          {plans.map((plan) => (
+            <article
+              key={plan.id}
+              className={`relative rounded-2xl p-8 shadow-lg ${
+                plan.highlight === 'premium'
+                  ? 'border-2 border-blue-500 bg-white dark:bg-gray-800'
+                  : plan.highlight === 'popular'
+                    ? 'border-2 border-slate-900 bg-white dark:border-white dark:bg-gray-800'
+                    : 'border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+              }`}
+            >
+              {plan.highlight === 'premium' && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <PremiumBadge />
+                </div>
+              )}
+              {plan.highlight === 'popular' && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white dark:bg-white dark:text-slate-900">
+                  Most Popular
+                </div>
+              )}
 
-          {/* Premium Plan */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border-2 border-blue-500 relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <PremiumBadge />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Premium
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              For power users
-            </p>
-            <div className="mb-6">
-              <span className="text-4xl font-bold text-gray-900 dark:text-white">€4.99</span>
-              <span className="text-gray-600 dark:text-gray-400">/month</span>
-            </div>
-            <ul className="space-y-3 mb-8">
-              {premiumFeatures.map((feature, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">
-                    {feature.text}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <PremiumButton isPremium={isPremium} />
-          </div>
-        </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">{plan.description}</p>
+              <div className="mt-6">
+                <span className="text-4xl font-bold text-gray-900 dark:text-white">{plan.monthlyPriceLabel}</span>
+                <span className="text-gray-600 dark:text-gray-400">/month</span>
+              </div>
+              <ul className="mt-6 space-y-3">
+                {plan.featureList.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <Check className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
+                    <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                  </li>
+                ))}
+              </ul>
 
-        {/* Feature Comparison */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            Feature Comparison
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
+              <PlanButton
+                className="mt-8"
+                currentPlan={currentPlan}
+                targetPlan={plan.id}
+                planSource={user.planSource}
+                hasActiveAccess={accessState.hasAccess}
+              />
+            </article>
+          ))}
+        </section>
+
+        <ReferralCodeCard
+          initialCode={user.ownedReferralCode?.code || null}
+          referredByCode={user.redeemedReferral?.code.code || null}
+          bonusMonths={user.referralBonusMonths}
+        />
+
+        <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Feature comparison</h2>
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full min-w-180">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-4 px-4 text-gray-700 dark:text-gray-300 font-medium">
-                    Feature
-                  </th>
-                  <th className="text-center py-4 px-4 text-gray-700 dark:text-gray-300 font-medium">
-                    Free
-                  </th>
-                  <th className="text-center py-4 px-4 text-gray-700 dark:text-gray-300 font-medium">
-                    Premium
-                  </th>
+                  <th className="px-4 py-4 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Feature</th>
+                  {plans.map((plan) => (
+                    <th key={plan.id} className="px-4 py-4 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {plan.name}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { name: 'Dashboard Widgets', free: '5 max', premium: 'Unlimited' },
-                  { name: 'Widget Types', free: 'Basic', premium: 'All + Premium' },
-                  { name: 'Themes', free: 'Basic', premium: 'All + Premium' },
-                  { name: 'Statistics Range', free: '7 days', premium: 'Unlimited' },
-                  { name: 'Data Export', free: 'No', premium: 'Yes' },
-                  { name: 'Priority Support', free: 'No', premium: 'Yes' },
-                  { name: 'Early Access', free: 'No', premium: 'Yes' },
-                ].map((row, index) => (
-                  <tr
-                    key={index}
-                    className="border-b border-gray-100 dark:border-gray-700/50"
-                  >
-                    <td className="py-4 px-4 text-gray-700 dark:text-gray-300">
-                      {row.name}
-                    </td>
-                    <td className="text-center py-4 px-4 text-gray-500 dark:text-gray-400">
-                      {row.free}
-                    </td>
-                    <td className="text-center py-4 px-4 text-blue-600 dark:text-blue-400 font-medium">
-                      {row.premium}
-                    </td>
+                {comparisonRows.map((row) => (
+                  <tr key={row.key} className="border-b border-gray-100 dark:border-gray-700/60">
+                    <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-300">{row.name}</td>
+                    {plans.map((plan) => (
+                      <td
+                        key={plan.id}
+                        className={`px-4 py-4 text-center text-sm ${
+                          plan.id === 'PREMIUM'
+                            ? 'font-medium text-blue-600 dark:text-blue-400'
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                      >
+                        {plan.comparison[row.key]}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* FAQ Section */}
-        <div className="mt-12 text-center">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Frequently Asked Questions
-          </h3>
-          <div className="grid md:grid-cols-2 gap-6 text-left">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                Can I cancel anytime?
-              </h4>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Yes, you can cancel your subscription at any time. Your premium access will continue until the end of your billing period.
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                What payment methods are accepted?
-              </h4>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                We accept all major credit cards, PayPal, and other payment methods through Paddle, our secure payment processor.
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                Is there a free trial?
-              </h4>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                We offer a 7-day money-back guarantee. If you&apos;re not satisfied, contact us for a full refund.
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                How do I get support?
-              </h4>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Premium users get priority support with faster response times. Free users can still reach us through our community channels.
-              </p>
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
     </div>
   );
