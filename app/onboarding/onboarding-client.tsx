@@ -8,6 +8,7 @@ import jsQR from "jsqr";
 export function OnboardingClient() {
     const router = useRouter();
     const [uriString, setUriString] = useState("");
+    const [promoCode, setPromoCode] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [dragActive, setDragActive] = useState(false);

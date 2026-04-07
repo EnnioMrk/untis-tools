@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { updateDataStartDate } from '@/app/dashboard/actions';
 import { useRouter } from 'next/navigation';
 
@@ -23,6 +24,35 @@ export function DateRangePicker({
         initialDate ? initialDate.toISOString().split('T')[0] : '',
     );
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!showDatePicker) return;
+
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setShowDatePicker(false);
+            }
+        };
+
+        const isMobile = window.matchMedia('(max-width: 639px)').matches;
+        const previousOverflow = document.body.style.overflow;
+
+        if (isMobile) {
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.addEventListener('keydown', handleEscape);
+
+        return () => {
+            window.removeEventListener('keydown', handleEscape);
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [showDatePicker]);
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newDate = e.target.value;
@@ -68,12 +98,56 @@ export function DateRangePicker({
         });
     };
 
+    const pickerContent = useMemo(
+        () => (
+            <div className="flex flex-col gap-3">
+                <label className="text-sm font-semibold text-gray-900">
+                    Data starts from:
+                </label>
+
+                <div className="flex flex-wrap gap-2">
+                    {presetDates.map((preset, index) => (
+                        <button
+                            key={index}
+                            onClick={() => handlePresetClick(preset.date)}
+                            className="text-xs px-2 py-1.5 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors font-medium"
+                            disabled={isPending}
+                        >
+                            {preset.label}
+                        </button>
+                    ))}
+                    <button
+                        onClick={handleResetToDefault}
+                        className="text-xs px-2 py-1.5 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors font-medium"
+                        disabled={isPending}
+                    >
+                        From start
+                    </button>
+                </div>
+
+                <div className="border-t border-gray-200 my-2"></div>
+
+                <label className="text-sm font-medium text-gray-700">
+                    Or select custom date:
+                </label>
+                <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={handleDateChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={isPending}
+                />
+            </div>
+        ),
+        [isPending, presetDates, selectedDate],
+    );
+
     return (
-        <div className="flex items-center gap-2">
-            <div className="relative">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+            <div className="relative w-full sm:w-auto">
                 <button
                     onClick={() => setShowDatePicker(!showDatePicker)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition-colors hover:bg-gray-50 sm:w-auto sm:justify-start"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -99,57 +173,48 @@ export function DateRangePicker({
                         {formatDisplayDate()}
                     </span>
                     {isCustom && (
-                        <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">
+                        <span className="hidden text-xs rounded bg-blue-50 px-1.5 py-0.5 font-medium text-blue-600 sm:inline-flex">
                             Custom
                         </span>
                     )}
                 </button>
 
                 {showDatePicker && (
-                    <div className="absolute top-full right-0 mt-2 p-4 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[280px]">
-                        <div className="flex flex-col gap-3">
-                            <label className="text-sm font-semibold text-gray-900">
-                                Data starts from:
-                            </label>
-
-                            {/* Preset buttons */}
-                            <div className="flex flex-wrap gap-2">
-                                {presetDates.map((preset, index) => (
-                                    <button
-                                        key={index}
+                    <>
+                        {mounted &&
+                            createPortal(
+                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:hidden">
+                                    <div
+                                        className="absolute inset-0 h-dvh w-screen bg-black/45"
                                         onClick={() =>
-                                            handlePresetClick(preset.date)
+                                            setShowDatePicker(false)
                                         }
-                                        className="text-xs px-2 py-1.5 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors font-medium"
-                                        disabled={isPending}
+                                        aria-hidden="true"
+                                    />
+
+                                    <div
+                                        role="dialog"
+                                        aria-modal="true"
+                                        className="relative z-10 w-full max-w-sm rounded-xl border border-gray-200 bg-white p-4 shadow-2xl"
                                     >
-                                        {preset.label}
-                                    </button>
-                                ))}
-                                <button
-                                    onClick={handleResetToDefault}
-                                    className="text-xs px-2 py-1.5 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors font-medium"
-                                    disabled={isPending}
-                                >
-                                    From start
-                                </button>
-                            </div>
+                                        {pickerContent}
+                                        <button
+                                            onClick={() =>
+                                                setShowDatePicker(false)
+                                            }
+                                            className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>,
+                                document.body,
+                            )}
 
-                            <div className="border-t border-gray-200 my-2"></div>
-
-                            {/* Custom date picker */}
-                            <label className="text-sm font-medium text-gray-700">
-                                Or select custom date:
-                            </label>
-                            <input
-                                type="date"
-                                value={selectedDate}
-                                onChange={handleDateChange}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                                disabled={isPending}
-                            />
+                        <div className="absolute top-full right-0 z-50 mt-2 hidden min-w-[280px] rounded-lg border border-gray-200 bg-white p-4 shadow-lg sm:block">
+                            {pickerContent}
                         </div>
-                    </div>
+                    </>
                 )}
             </div>
             {isPending && (

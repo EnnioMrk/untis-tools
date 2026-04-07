@@ -52,7 +52,7 @@ export function DashboardHeader({
 
     return (
         <div
-            className={`mb-6 rounded-3xl border p-5 shadow-sm backdrop-blur ${themeConfig.headerClass}`}
+            className={`relative z-20 mb-6 rounded-3xl border p-5 shadow-sm backdrop-blur ${themeConfig.headerClass}`}
         >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
@@ -75,7 +75,7 @@ export function DashboardHeader({
                     </p>
                 </div>
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
                     <Link
                         href="/shop"
                         className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"

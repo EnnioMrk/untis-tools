@@ -11,6 +11,7 @@ import {
 import type { PlanSource } from "@prisma/client";
 import { openCheckout } from "@/app/premium/actions";
 import { Sparkles, Crown, Loader2, Star } from "lucide-react";
+import { inferClientPaddleEnvironment } from "@/lib/paddle-environment";
 
 interface PremiumButtonProps {
     currentPlan: AppPlan;
@@ -46,10 +47,14 @@ export function PlanButton({
     useEffect(() => {
         const initPaddle = async () => {
             try {
+                const clientToken =
+                    process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || "";
                 const paddleInstance = await initializePaddle({
-                    environment: (process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT ||
-                        "sandbox") as "sandbox" | "production",
-                    token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || "",
+                    environment: inferClientPaddleEnvironment(
+                        clientToken,
+                        process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT,
+                    ),
+                    token: clientToken,
                 });
                 setPaddle(paddleInstance);
             } catch (err) {

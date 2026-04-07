@@ -7,11 +7,14 @@ import {
 import { WebhooksValidator } from "@paddle/paddle-node-sdk";
 import type { PaidPlan } from "@/lib/plans";
 import type { ShopThemeId } from "@/lib/shop";
+import { inferServerPaddleEnvironment } from "@/lib/paddle-environment";
 
 // Initialize Paddle SDK client
 const paddleApiKey = process.env.PADDLE_API_KEY;
-const paddleEnvironment =
-    (process.env.PADDLE_ENVIRONMENT as Environment) || "sandbox";
+const paddleEnvironment = inferServerPaddleEnvironment(
+    paddleApiKey,
+    process.env.PADDLE_ENVIRONMENT,
+) as Environment;
 
 if (!paddleApiKey) {
     console.warn(

@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginAction, signupAction } from "../actions";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignInPage() {
     const router = useRouter();
     const [isLogin, setIsLogin] = useState(true);
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -113,39 +115,57 @@ export default function SignInPage() {
                             >
                                 Passwort
                             </label>
-                            <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                required
-                                minLength={isLogin ? undefined : 8}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                placeholder={
-                                    isLogin
-                                        ? "Dein Passwort"
-                                        : "Mindestens 8 Zeichen"
-                                }
-                            />
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    id="password"
+                                    name="password"
+                                    required
+                                    minLength={isLogin ? undefined : 8}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all pr-10"
+                                    placeholder={
+                                        isLogin
+                                            ? "Dein Passwort"
+                                            : "Mindestens 8 Zeichen"
+                                    }
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
+                                    title={
+                                        showPassword
+                                            ? "Passwort verbergen"
+                                            : "Passwort anzeigen"
+                                    }
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="h-5 w-5" />
+                                    ) : (
+                                        <Eye className="h-5 w-5" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         {!isLogin && (
                             <div>
                                 <label
-                                    htmlFor="referralCode"
+                                    htmlFor="promoCode"
                                     className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                                 >
-                                    Referral-Code (optional)
+                                    Coupon- oder Referral-Code (optional)
                                 </label>
                                 <input
                                     type="text"
-                                    id="referralCode"
-                                    name="referralCode"
+                                    id="promoCode"
+                                    name="promoCode"
                                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all uppercase"
-                                    placeholder="REF-AB12CD34"
+                                    placeholder="COUPON-CODE123"
                                 />
                                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Mit einem gültigen Referral-Code startest du
-                                    mit einem kostenlosen Premium-Monat.
+                                    Mit einem gültigen Code startest du
+                                    mit kostenlosen Premium-Vorteilen.
                                 </p>
                             </div>
                         )}

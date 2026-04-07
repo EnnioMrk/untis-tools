@@ -6,6 +6,8 @@ import { parseQRString, testConnection, type UntisConfig } from "@/lib/untis";
 import { encrypt } from "@/lib/encryption";
 import { triggerImmediateSync } from "@/lib/sync";
 import { revalidatePath } from "next/cache";
+import { normalizeCode } from "@/lib/referrals";
+import { addMonths } from "@/lib/subscription";
 
 export interface ConnectResult {
   success: boolean;
@@ -27,6 +29,10 @@ export async function connectUntisAccount(
   }
 
   const userId = session.user.id;
+
+  // Get the codes from form data
+  const rawPromoCode = formData.get("promoCode") as string | null;
+  const promoCode = normalizeCode(rawPromoCode);
 
   // Get the URI from form data (either from text input or file upload)
   const uriString = formData.get("uriString") as string | null;
@@ -113,6 +119,58 @@ export async function connectUntisAccount(
       console.log('[connectUntisAccount] Immediate sync completed successfully');
       // Revalidate the dashboard path to ensure fresh data
       revalidatePath('/dashboard');
+    }
+
+    // Handle Promo Code (Referral or Coupon)
+    if (promoCode) {
+      // 1. Try to find a referral code
+      const referralCode = await prisma.referralCode.findUnique({
+        where: { code: promoCode, isActive: true },
+        include: {
+          _count: {
+            select: { redemptions: true }
+          }
+        }
+      });
+
+      if (referralCode && (
+        !referralCode.maxRedemptions || 
+        referralCode._count.redemptions < referralCode.maxRedemptions
+      )) {
+        // Redeem referral code
+        try {
+          await prisma.referralRedemption.create({
+            data: {
+              codeId: referralCode.id,
+              referredUserId: userId,
+            }
+          });
+        } catch (e) {
+          console.warn('[connectUntisAccount] Referral already redeemed or failed');
+        }
+      } 
+      
+      // 2. Try to find a coupon code (independent of referral)
+      const couponCode = await prisma.couponCode.findUnique({
+        where: { code: promoCode, isActive: true }
+      });
+
+      if (couponCode && (
+        (!couponCode.expiresAt || couponCode.expiresAt > new Date()) &&
+        (!couponCode.maxRedemptions || await prisma.user.count({ where: { planSource: 'BONUS', plan: 'PREMIUM' } }) < couponCode.maxRedemptions)
+      )) {
+         // Redeem coupon code: Grant Premium bonus months immediately
+         if (couponCode.freeMonths > 0) {
+            await prisma.user.update({
+              where: { id: userId },
+              data: {
+                plan: 'PREMIUM',
+                planSource: 'BONUS',
+                accessEndsAt: addMonths(new Date(), couponCode.freeMonths),
+              }
+            });
+         }
+      }
     }
 
     return { success: true, message: 'Untis account connected and data synced' };

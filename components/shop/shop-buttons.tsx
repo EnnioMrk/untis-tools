@@ -6,6 +6,7 @@ import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 import { Check, Loader2, Palette, ShoppingCart } from "lucide-react";
 import type { ShopThemeId } from "@/lib/shop";
 import { activateOwnedTheme, openThemeCheckout } from "@/app/shop/actions";
+import { inferClientPaddleEnvironment } from "@/lib/paddle-environment";
 
 interface BaseButtonProps {
     className?: string;
@@ -22,10 +23,14 @@ export function BuyThemeButton({
     useEffect(() => {
         const initPaddle = async () => {
             try {
+                const clientToken =
+                    process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || "";
                 const paddleInstance = await initializePaddle({
-                    environment: (process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT ||
-                        "sandbox") as "sandbox" | "production",
-                    token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || "",
+                    environment: inferClientPaddleEnvironment(
+                        clientToken,
+                        process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT,
+                    ),
+                    token: clientToken,
                 });
                 setPaddle(paddleInstance);
             } catch (initError) {
