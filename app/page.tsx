@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getUserAccessState } from "@/lib/subscription";
+import { getUserAccessState } from "@/lib/access-engine";
 
 export default async function Home() {
     const session = await auth();
@@ -16,20 +16,9 @@ export default async function Home() {
         where: { userId: session.user.id },
     });
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-            id: true,
-            plan: true,
-            planSource: true,
-            isAdmin: true,
-            trialEndsAt: true,
-            accessEndsAt: true,
-            referralBonusMonths: true,
-        },
-    });
+    const { hasAccess } = await getUserAccessState(session.user.id);
 
-    if (!user || !getUserAccessState(user).hasAccess) {
+    if (!hasAccess) {
         redirect("/premium/trial-ended");
     }
 

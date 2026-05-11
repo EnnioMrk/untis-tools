@@ -4,7 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import type { Plan } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
-import { getUserAccessState } from "./subscription";
+import { refreshGrants } from "./access-engine";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma) as never,
@@ -72,19 +72,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
 
             if (token.id) {
-                const currentUser = await prisma.user.findUnique({
-                    where: { id: token.id as string },
-                    select: {
-                        plan: true,
-                        planSource: true,
-                        isAdmin: true,
-                    },
-                });
+                try {
+                    const currentUser = await prisma.user.findUnique({
+                        where: { id: token.id as string },
+                        select: {
+                            plan: true,
+                            planSource: true,
+                            isAdmin: true,
+                        },
+                    });
 
-                if (currentUser) {
-                    token.plan = currentUser.plan;
-                    token.planSource = currentUser.planSource;
-                    token.isAdmin = currentUser.isAdmin;
+                    if (currentUser) {
+                        token.plan = currentUser.plan;
+                        token.planSource = currentUser.planSource;
+                        token.isAdmin = currentUser.isAdmin;
+                    }
+
+                    // Refresh grants to auto-activate any pending grants
+                    await refreshGrants(token.id as string);
+                } catch (error) {
+                    console.error(
+                        "[AUTH] Error in jwt callback for user",
+                        token.id,
+                        ":",
+                        error,
+                    );
                 }
             }
 
@@ -93,34 +105,44 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = (token.id || token.sub) as string;
-                const currentUser = await prisma.user.findUnique({
-                    where: { id: session.user.id },
-                    select: {
-                        plan: true,
-                        planSource: true,
-                        isAdmin: true,
-                        trialEndsAt: true,
-                        accessEndsAt: true,
-                        referralBonusMonths: true,
-                    },
-                });
 
-                if (currentUser) {
-                    const accessState = getUserAccessState({
-                        id: session.user.id,
-                        plan: currentUser.plan,
-                        planSource: currentUser.planSource,
-                        isAdmin: currentUser.isAdmin,
-                        trialEndsAt: currentUser.trialEndsAt,
-                        accessEndsAt: currentUser.accessEndsAt,
-                        referralBonusMonths: currentUser.referralBonusMonths,
+                try {
+                    // Refresh grants and get current user state
+                    const currentUser = await prisma.user.findUnique({
+                        where: { id: session.user.id },
+                        select: {
+                            plan: true,
+                            planSource: true,
+                            isAdmin: true,
+                        },
                     });
 
-                    session.user.plan = accessState.effectivePlan as Plan;
-                    session.user.planSource = currentUser.planSource;
-                    session.user.isAdmin = currentUser.isAdmin;
-                    session.user.hasActiveAccess = accessState.hasAccess;
-                } else {
+                    if (currentUser) {
+                        const accessState = await refreshGrants(
+                            session.user.id,
+                        );
+
+                        session.user.plan = accessState.effectivePlan as Plan;
+                        session.user.planSource = currentUser.planSource;
+                        session.user.isAdmin = currentUser.isAdmin;
+                        session.user.hasActiveAccess = accessState.hasAccess;
+                        (session.user as any).accessExpiresAt =
+                            accessState.expiresAt ?? null;
+                    } else {
+                        session.user.plan = (token.plan || "BASIC") as Plan;
+                        session.user.planSource = (token.planSource ||
+                            "NONE") as typeof session.user.planSource;
+                        session.user.isAdmin = Boolean(token.isAdmin);
+                        session.user.hasActiveAccess = false;
+                    }
+                } catch (error) {
+                    console.error(
+                        "[AUTH] Error in session callback for user",
+                    session.user.id,
+                    ":",
+                    error,
+                );
+                    // Fallback to token values on error
                     session.user.plan = (token.plan || "BASIC") as Plan;
                     session.user.planSource = (token.planSource ||
                         "NONE") as typeof session.user.planSource;

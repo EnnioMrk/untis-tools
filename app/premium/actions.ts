@@ -2,16 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { isPlanAtLeast, type AppPlan, type PaidPlan } from "@/lib/plans";
-import { prisma } from "@/lib/prisma";
-import { generateUniqueReferralCode } from "@/lib/referrals";
+import {
+    isPlanAtLeast,
+    type AppPlan,
+    type PaidPlan,
+} from "@/lib/plans";
+import type { CheckoutItem, isValidCheckoutItems } from "@/lib/checkout/types";
 import {
     createCustomer,
-    createCheckout,
     getCustomer,
     getPriceId,
+    createCheckout,
+    createMultiCheckout,
 } from "@/lib/paddle";
-import { getUserAccessState } from "@/lib/subscription";
+import { getUserAccessState } from "@/lib/access-engine";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Subscription status response
@@ -22,8 +27,6 @@ export interface SubscriptionStatus {
     planSource: string;
     paddleCustomerId: string | null;
     paddleSubscriptionId: string | null;
-    trialEndsAt: Date | null;
-    accessEndsAt: Date | null;
     hasActiveAccess: boolean;
 }
 
@@ -43,9 +46,6 @@ export async function getSubscriptionStatus(): Promise<SubscriptionStatus | null
             planSource: true,
             paddleCustomerId: true,
             paddleSubscriptionId: true,
-            trialEndsAt: true,
-            accessEndsAt: true,
-            referralBonusMonths: true,
         },
     });
 
@@ -53,15 +53,7 @@ export async function getSubscriptionStatus(): Promise<SubscriptionStatus | null
         return null;
     }
 
-    const accessState = getUserAccessState({
-        id: session.user.id,
-        plan: user.plan,
-        planSource: user.planSource,
-        isAdmin: false,
-        trialEndsAt: user.trialEndsAt,
-        accessEndsAt: user.accessEndsAt,
-        referralBonusMonths: user.referralBonusMonths,
-    });
+    const accessState = await getUserAccessState(session.user.id);
 
     return {
         plan: accessState.effectivePlan,
@@ -69,16 +61,54 @@ export async function getSubscriptionStatus(): Promise<SubscriptionStatus | null
         planSource: user.planSource,
         paddleCustomerId: user.paddleCustomerId,
         paddleSubscriptionId: user.paddleSubscriptionId,
-        trialEndsAt: user.trialEndsAt,
-        accessEndsAt: user.accessEndsAt,
         hasActiveAccess: accessState.hasAccess,
     };
 }
 
 /**
+ * Ensure Paddle customer exists, create if missing
+ */
+async function ensurePaddleCustomer(
+    email: string,
+    userId: string,
+    existingCustomerId: string | null,
+): Promise<string> {
+    if (!existingCustomerId) {
+        const customer = await createCustomer(email, userId);
+        if (!customer) {
+            throw new Error("Failed to create customer");
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { paddleCustomerId: customer.id },
+        });
+
+        return customer.id;
+    }
+
+    const existingCustomer = await getCustomer(existingCustomerId);
+    if (!existingCustomer) {
+        const customer = await createCustomer(email, userId);
+        if (!customer) {
+            throw new Error("Failed to create customer");
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { paddleCustomerId: customer.id },
+        });
+
+        return customer.id;
+    }
+
+    return existingCustomerId;
+}
+
+/**
  * Open checkout - creates/updates Paddle customer and returns checkout URL
  */
-export async function openCheckout(targetPlan: PaidPlan): Promise<{
+export async function openCheckout(targetPlan: PaidPlan, continueUrl?: string): Promise<{
     success: boolean;
     checkoutId?: string;
     error?: string;
@@ -96,9 +126,6 @@ export async function openCheckout(targetPlan: PaidPlan): Promise<{
                 plan: true,
                 planSource: true,
                 paddleCustomerId: true,
-                trialEndsAt: true,
-                accessEndsAt: true,
-                referralBonusMonths: true,
             },
         });
 
@@ -106,15 +133,7 @@ export async function openCheckout(targetPlan: PaidPlan): Promise<{
             return { success: false, error: "User not found" };
         }
 
-        const accessState = getUserAccessState({
-            id: session.user.id,
-            plan: user.plan,
-            planSource: user.planSource,
-            isAdmin: false,
-            trialEndsAt: user.trialEndsAt,
-            accessEndsAt: user.accessEndsAt,
-            referralBonusMonths: user.referralBonusMonths,
-        });
+        const accessState = await getUserAccessState(session.user.id);
 
         if (
             accessState.hasAccess &&
@@ -139,44 +158,11 @@ export async function openCheckout(targetPlan: PaidPlan): Promise<{
             };
         }
 
-        let customerId = user.paddleCustomerId;
-
-        // Create or get Paddle customer
-        if (!customerId) {
-            const customer = await createCustomer(user.email, session.user.id);
-            if (!customer) {
-                return { success: false, error: "Failed to create customer" };
-            }
-            customerId = customer.id;
-
-            // Store customer ID in database
-            await prisma.user.update({
-                where: { id: session.user.id },
-                data: { paddleCustomerId: customerId },
-            });
-        } else {
-            // Verify customer exists in Paddle
-            const existingCustomer = await getCustomer(customerId);
-            if (!existingCustomer) {
-                // Customer doesn't exist in Paddle, create new one
-                const customer = await createCustomer(
-                    user.email,
-                    session.user.id,
-                );
-                if (!customer) {
-                    return {
-                        success: false,
-                        error: "Failed to create customer",
-                    };
-                }
-                customerId = customer.id;
-
-                await prisma.user.update({
-                    where: { id: session.user.id },
-                    data: { paddleCustomerId: customerId },
-                });
-            }
-        }
+        const customerId = await ensurePaddleCustomer(
+            user.email,
+            session.user.id,
+            user.paddleCustomerId,
+        );
 
         // Get price ID from environment
         const priceId = getPriceId(targetPlan);
@@ -185,6 +171,7 @@ export async function openCheckout(targetPlan: PaidPlan): Promise<{
         const transaction = await createCheckout(customerId, priceId, {
             userId: session.user.id,
             plan: targetPlan,
+            continueUrl,
         });
         if (!transaction) {
             return { success: false, error: "Failed to create checkout" };
@@ -196,6 +183,101 @@ export async function openCheckout(targetPlan: PaidPlan): Promise<{
         };
     } catch (error) {
         console.error("Failed to open checkout:", error);
+        return { success: false, error: "Failed to open checkout" };
+    }
+}
+
+/**
+ * Open multi-plan checkout - allows purchasing multiple plan seats in one transaction
+ */
+export async function openMultiCheckout(
+    selectedPlans: unknown,
+    continueUrl?: string,
+): Promise<{
+    success: boolean;
+    checkoutId?: string;
+    error?: string;
+}> {
+    const session = await auth();
+    if (!session?.user?.id || !session?.user?.email) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    if (!isValidCheckoutItems(selectedPlans)) {
+        return { success: false, error: "Invalid checkout items" };
+    }
+
+    const plans = selectedPlans as CheckoutItem[];
+
+    if (plans.length === 0) {
+        return { success: false, error: "No plans selected" };
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                email: true,
+                plan: true,
+                planSource: true,
+                paddleCustomerId: true,
+            },
+        });
+
+        if (!user) {
+            return { success: false, error: "User not found" };
+        }
+
+        const accessState = await getUserAccessState(session.user.id);
+
+        // Determine the highest plan being purchased
+        const highestPurchasedPlan = plans.reduce<PaidPlan>(
+            (highest, item) =>
+                isPlanAtLeast(highest, item.plan) ? highest : item.plan,
+            plans[0].plan,
+        );
+
+        // Block checkout if user already has this tier or higher via active subscription
+        if (
+            accessState.hasAccess &&
+            user.planSource === "SUBSCRIPTION" &&
+            isPlanAtLeast(accessState.effectivePlan, highestPurchasedPlan)
+        ) {
+            return {
+                success: false,
+                error: "You already have access to this plan tier or higher.",
+            };
+        }
+
+        // Create / get Paddle customer
+        const customerId = await ensurePaddleCustomer(
+            user.email,
+            session.user.id,
+            user.paddleCustomerId,
+        );
+
+        // Build items array with price IDs
+        const items = await Promise.all(
+            plans.map(async (item) => ({
+                priceId: getPriceId(item.plan, item.billingPeriod),
+                quantity: item.quantity,
+            })),
+        );
+
+        const purchasedPlans = plans.map((item) => item.plan);
+        const transaction = await createMultiCheckout(customerId, items, {
+            userId: session.user.id,
+            purchasedPlans,
+            continueUrl,
+        });
+
+        if (!transaction) {
+            return { success: false, error: "Failed to create checkout" };
+        }
+
+        return { success: true, checkoutId: transaction.id };
+    } catch (error) {
+        console.error("Failed to open multi-plan checkout:", error);
         return { success: false, error: "Failed to open checkout" };
     }
 }
@@ -238,6 +320,22 @@ export async function createPersonalReferralCode(): Promise<{
         console.error("Failed to create referral code:", error);
         return { success: false, error: "Failed to create referral code" };
     }
+}
+
+async function generateUniqueReferralCode(prefix: string = "REF"): Promise<string> {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+        const candidate = `${prefix}-${crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+        const existing = await prisma.referralCode.findUnique({
+            where: { code: candidate },
+            select: { id: true },
+        });
+
+        if (!existing) {
+            return candidate;
+        }
+    }
+
+    throw new Error("Failed to generate a unique referral code");
 }
 
 /**

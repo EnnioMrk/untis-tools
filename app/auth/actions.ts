@@ -2,15 +2,12 @@
 
 import { signIn, signOut } from "@/lib/auth";
 import { findAvailableReferralCode, normalizeCode } from "@/lib/referrals";
+import { findAvailableCouponCode } from "@/lib/coupon";
 import { prisma } from "@/lib/prisma";
 import { addMonths } from "@/lib/subscription";
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { z } from "zod";
-
-function getReferralTrialEndDate() {
-    return addMonths(new Date(), 1);
-}
 
 const signupSchema = z.object({
     email: z.string().email("Ungültige E-Mail-Adresse"),
@@ -54,61 +51,76 @@ export async function signupAction(
         }
 
         const hashedPassword = await bcrypt.hash(password, 12);
+        const now = new Date();
 
         // 1. Try to find a referral code
         const referralCode = normalizedPromoCode
             ? await findAvailableReferralCode(normalizedPromoCode)
             : null;
 
-        // 2. Try to find a coupon code
-        const couponCode = normalizedPromoCode
-            ? await prisma.couponCode.findUnique({
-                  where: { code: normalizedPromoCode, isActive: true },
-              })
-            : null;
-
-        if (normalizedPromoCode && !referralCode && !couponCode) {
-            return {
-                success: false,
-                error: "Code ist ungültig oder abgelaufen",
-            };
-        }
-
         await prisma.$transaction(async (tx) => {
-            // Determine initial plan and expiration based on referral or coupon
-            let initialPlan: "BASIC" | "PREMIUM" = "BASIC";
-            let planSource: "NONE" | "TRIAL" | "BONUS" = "NONE";
-            let accessEndsAt: Date | null = null;
-            let trialEndsAt: Date | null = null;
-
-            if (couponCode && couponCode.freeMonths > 0) {
-                initialPlan = "PREMIUM";
-                planSource = "BONUS";
-                accessEndsAt = addMonths(new Date(), couponCode.freeMonths);
-            } else if (referralCode) {
-                planSource = "TRIAL";
-                trialEndsAt = getReferralTrialEndDate();
-            }
-
+            // Create the user
             const createdUser = await tx.user.create({
                 data: {
                     email,
                     password: hashedPassword,
                     name: name || null,
-                    plan: initialPlan,
-                    planSource,
-                    trialEndsAt,
-                    accessEndsAt,
+                    plan: "BASIC",
+                    planSource: "NONE",
                 },
             });
 
+            // 2. Try to find a coupon code
+            const availableCoupon = normalizedPromoCode
+                ? await findAvailableCouponCode(normalizedPromoCode, "")
+                : null;
+
             if (referralCode) {
+                // Create referral redemption
                 await tx.referralRedemption.create({
                     data: {
                         codeId: referralCode.id,
                         referredUserId: createdUser.id,
                     },
                 });
+
+                // Create ACTIVE TRIAL grant (12 months for referral signups)
+                await tx.accessGrant.create({
+                    data: {
+                        userId: createdUser.id,
+                        type: "TRIAL",
+                        status: "ACTIVE",
+                        plan: "PREMIUM",
+                        months: 12,
+                        activatedAt: now,
+                        expiresAt: addMonths(now, 12),
+                    },
+                });
+            } else if (availableCoupon && availableCoupon.freeMonths > 0) {
+                // Create coupon redemption
+                await tx.couponRedemption.create({
+                    data: {
+                        couponId: availableCoupon.id,
+                        redeemedUserId: createdUser.id,
+                    },
+                });
+
+                // Create ACTIVE COUPON grant
+                await tx.accessGrant.create({
+                    data: {
+                        userId: createdUser.id,
+                        type: "COUPON",
+                        status: "ACTIVE",
+                        plan: "PREMIUM",
+                        months: availableCoupon.freeMonths,
+                        activatedAt: now,
+                        expiresAt: addMonths(now, availableCoupon.freeMonths),
+                    },
+                });
+            }
+
+            if (normalizedPromoCode && !referralCode && !availableCoupon) {
+                throw new Error("Code ist ungültig oder abgelaufen");
             }
         });
 

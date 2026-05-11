@@ -29,9 +29,6 @@ export default async function ShopPage() {
             plan: true,
             planSource: true,
             isAdmin: true,
-            trialEndsAt: true,
-            accessEndsAt: true,
-            referralBonusMonths: true,
             activeTheme: true,
             themePurchases: {
                 select: {
@@ -60,24 +57,24 @@ export default async function ShopPage() {
                                 Shop
                             </div>
                             <h1 className="text-4xl font-bold text-slate-900">
-                                Theme shop
+                                Theme-Shop
                             </h1>
                             <p className="mt-3 text-lg text-slate-600">
-                                Buy premium dashboard themes directly.
-                                Subscriptions are managed in the{" "}
+                                Premium-Dashboard-Themes direkt kaufen.
+                                Abonnements werden im{" "}
                                 <Link
                                     href="/premium"
                                     className="font-semibold text-blue-700 hover:text-blue-800"
                                 >
-                                    billing area
+                                    Abrechnungsbereich
                                 </Link>
-                                .
+                                verwaltet.
                             </p>
                             <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-600">
                                 <span
                                     className={`rounded-full px-3 py-1 shadow-sm ${activeTheme.badgeClass}`}
                                 >
-                                    Active theme:{" "}
+                                    Aktives Theme:{" "}
                                     <strong>{activeTheme.name}</strong>
                                 </span>
                                 <span className="rounded-full bg-white/70 px-3 py-1 shadow-sm">
@@ -101,8 +98,8 @@ export default async function ShopPage() {
                                     {ownedThemes.size}
                                 </div>
                                 <p className="mt-2 text-sm text-slate-500">
-                                    Purchases stay attached to your account and
-                                    can be activated anytime.
+                                    Käufe bleiben an Ihrem Konto hängen und
+                                    können jederzeit aktiviert werden.
                                 </p>
                             </div>
                         </div>
@@ -114,11 +111,11 @@ export default async function ShopPage() {
                         <Palette className="h-6 w-6 text-violet-600" />
                         <div>
                             <h2 className="text-2xl font-bold text-slate-900">
-                                Theme gallery
+                                Theme-Galerie
                             </h2>
                             <p className="text-slate-600">
-                                Unlock a look you like, then apply it instantly
-                                to the dashboard shell.
+                                Schalten Sie ein Theme frei, das Ihnen gefällt,
+                                und wenden Sie es sofort auf die Dashboard-Shell an.
                             </p>
                         </div>
                     </div>
@@ -149,18 +146,18 @@ export default async function ShopPage() {
                                             <span
                                                 className={`rounded-full px-3 py-1 text-xs font-semibold ${theme.badgeClass}`}
                                             >
-                                                Active
+                                                Aktiv
                                             </span>
                                         )}
                                     </div>
 
                                     <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
                                         <div className="text-sm text-slate-500">
-                                            Price
+                                            Preis
                                         </div>
                                         <div className="mt-1 text-2xl font-bold text-slate-900">
                                             {theme.priceEuroCents === 0
-                                                ? "Included"
+                                                ? "Enthalten"
                                                 : formatEuroCents(
                                                       theme.priceEuroCents,
                                                   )}

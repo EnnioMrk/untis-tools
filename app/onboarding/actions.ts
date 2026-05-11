@@ -7,6 +7,7 @@ import { encrypt } from "@/lib/encryption";
 import { triggerImmediateSync } from "@/lib/sync";
 import { revalidatePath } from "next/cache";
 import { normalizeCode } from "@/lib/referrals";
+import { findAvailableCouponCode } from "@/lib/coupon";
 import { addMonths } from "@/lib/subscription";
 
 export interface ConnectResult {
@@ -20,7 +21,7 @@ export interface ConnectResult {
  * Accepts either a pasted URI string or extracted text from a QR code image
  */
 export async function connectUntisAccount(
-  formData: FormData
+  formData: FormData,
 ): Promise<ConnectResult> {
   // Check authentication
   const session = await auth();
@@ -79,6 +80,8 @@ export async function connectUntisAccount(
     // Encrypt the secret before storing
     const encryptedSecret = encrypt(config.secret);
 
+    const now = new Date();
+
     // Check if user already has a connection
     const existingConnection = await prisma.untisConnection.findUnique({
       where: { userId },
@@ -133,43 +136,65 @@ export async function connectUntisAccount(
         }
       });
 
-      if (referralCode && (
-        !referralCode.maxRedemptions || 
-        referralCode._count.redemptions < referralCode.maxRedemptions
-      )) {
-        // Redeem referral code
-        try {
-          await prisma.referralRedemption.create({
-            data: {
-              codeId: referralCode.id,
-              referredUserId: userId,
-            }
-          });
-        } catch (e) {
-          console.warn('[connectUntisAccount] Referral already redeemed or failed');
-        }
-      } 
-      
-      // 2. Try to find a coupon code (independent of referral)
-      const couponCode = await prisma.couponCode.findUnique({
-        where: { code: promoCode, isActive: true }
-      });
-
-      if (couponCode && (
-        (!couponCode.expiresAt || couponCode.expiresAt > new Date()) &&
-        (!couponCode.maxRedemptions || await prisma.user.count({ where: { planSource: 'BONUS', plan: 'PREMIUM' } }) < couponCode.maxRedemptions)
-      )) {
-         // Redeem coupon code: Grant Premium bonus months immediately
-         if (couponCode.freeMonths > 0) {
-            await prisma.user.update({
-              where: { id: userId },
+if (referralCode && (
+          !referralCode.maxRedemptions ||
+          referralCode._count.redemptions < referralCode.maxRedemptions
+        )) {
+          // Redeem referral code
+          try {
+            await prisma.referralRedemption.create({
               data: {
-                plan: 'PREMIUM',
-                planSource: 'BONUS',
-                accessEndsAt: addMonths(new Date(), couponCode.freeMonths),
-              }
+                codeId: referralCode.id,
+                referredUserId: userId,
+              },
             });
-         }
+
+            // Create ACTIVE TRIAL grant (12 months for referral signups)
+            await prisma.accessGrant.create({
+              data: {
+                userId,
+                type: "TRIAL",
+                status: "ACTIVE",
+                plan: "PREMIUM",
+                months: 12,
+                activatedAt: now,
+                expiresAt: addMonths(now, 12),
+              },
+            });
+          } catch {
+            console.warn(
+              "[connectUntisAccount] Referral already redeemed or failed",
+            );
+          }
+        }
+
+      // 2. Try to find a coupon code
+      const availableCoupon = await findAvailableCouponCode(promoCode, userId);
+
+      if (availableCoupon) {
+        // Redeem coupon code: Grant Premium bonus months immediately
+        if (availableCoupon.freeMonths > 0) {
+          await prisma.$transaction(async (tx) => {
+            await tx.accessGrant.create({
+              data: {
+                userId,
+                type: 'COUPON',
+                status: 'ACTIVE',
+                plan: 'PREMIUM',
+                months: availableCoupon.freeMonths,
+                activatedAt: now,
+                expiresAt: addMonths(now, availableCoupon.freeMonths),
+              },
+            });
+
+            await tx.couponRedemption.create({
+              data: {
+                couponId: availableCoupon.id,
+                redeemedUserId: userId,
+              },
+            });
+          });
+        }
       }
     }
 

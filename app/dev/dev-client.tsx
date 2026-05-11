@@ -161,13 +161,13 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
     <div className="max-w-7xl mx-auto p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dev Test Site</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dev-Test-Bereich</h1>
         <p className="text-gray-600">
-          View all Untis data and how date filtering affects the statistics.
+          Alle Untis-Daten ansehen und wie Datumsfilter die Statistiken beeinflussen.
         </p>
         {rawData.lastSyncAt && (
           <p className="text-sm text-gray-500 mt-1">
-            Last synced: {new Date(rawData.lastSyncAt).toLocaleString()}
+            Zuletzt synchronisiert: {new Date(rawData.lastSyncAt).toLocaleString()}
           </p>
         )}
       </div>
@@ -194,16 +194,16 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
       {/* Filter Tab */}
       {activeTab === 'filter' && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Date Range Filter</h2>
+          <h2 className="text-xl font-semibold mb-4">Datums-Bereich Filter</h2>
           <p className="text-gray-600 mb-6">
-            Adjust the start and end dates to filter the Untis data. 
-            This demonstrates how the data is filtered by date.
+            Passen Sie Start- und Enddatum an, um die Untis-Daten zu filtern. 
+            Dies zeigt, wie Daten nach Datum gefiltert werden.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date
+                Startdatum
               </label>
               <input
                 type="date"
@@ -214,7 +214,7 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                End Date
+                Enddatum
               </label>
               <input
                 type="date"
@@ -228,13 +228,13 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
                 onClick={applyFilter}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Apply Filter
+                Filter anwenden
               </button>
               <button
                 onClick={clearFilter}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
               >
-                Clear
+                Zurücksetzen
               </button>
             </div>
           </div>
@@ -243,19 +243,19 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{calculatedStats.totalLessons}</div>
-              <div className="text-sm text-gray-600">Total Lessons</div>
+              <div className="text-sm text-gray-600">Gesamtstunden</div>
             </div>
             <div className="bg-red-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-red-600">{calculatedStats.totalAbsences}</div>
-              <div className="text-sm text-gray-600">Absences</div>
+              <div className="text-sm text-gray-600">Fehlzeiten</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-green-600">{calculatedStats.cancelledLessons}</div>
-              <div className="text-sm text-gray-600">Cancelled</div>
+              <div className="text-sm text-gray-600">Abgesagt</div>
             </div>
             <div className="bg-purple-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-purple-600">{calculatedStats.attendanceRate}%</div>
-              <div className="text-sm text-gray-600">Attendance Rate</div>
+              <div className="text-sm text-gray-600">Anwesenheitsquote</div>
             </div>
           </div>
         </div>
@@ -265,23 +265,23 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
       {activeTab === 'lessons' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-4 border-b bg-gray-50">
-            <h2 className="text-xl font-semibold">Lessons (Timetable)</h2>
+            <h2 className="text-xl font-semibold">Stunden (Stundenplan)</h2>
             <p className="text-sm text-gray-600">
-              Showing {filteredLessons.length} of {rawData.lessons.length} lessons
+              Zeige {filteredLessons.length} von {rawData.lessons.length} Stunden
             </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Time</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Subject</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Teachers</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Rooms</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-                </tr>
-              </thead>
+<thead className="bg-gray-50">
+                 <tr>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Datum</th>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Zeit</th>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Fach</th>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Lehrer</th>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Räume</th>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                 </tr>
+               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredLessons.slice(0, 100).map((lesson) => (
                   <tr key={lesson.id} className={lesson.code ? 'bg-yellow-50' : ''}>
@@ -291,24 +291,24 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
                     <td className="px-4 py-3">{lesson.teachers.join(', ') || '-'}</td>
                     <td className="px-4 py-3">{lesson.rooms.join(', ') || '-'}</td>
                     <td className="px-4 py-3">
-                      {lesson.code ? (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
-                          {lesson.code}
-                        </span>
-                      ) : (
-                        <span className="text-green-600">Scheduled</span>
-                      )}
+{lesson.code ? (
+                         <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
+                           {lesson.code}
+                         </span>
+                       ) : (
+                         <span className="text-green-600">Geplant</span>
+                       )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {filteredLessons.length > 100 && (
-            <div className="p-4 text-center text-gray-500 bg-gray-50">
-              Showing first 100 of {filteredLessons.length} lessons
-            </div>
-          )}
+{filteredLessons.length > 100 && (
+             <div className="p-4 text-center text-gray-500 bg-gray-50">
+               Zeige die ersten 100 von {filteredLessons.length} Stunden
+             </div>
+           )}
         </div>
       )}
 
@@ -316,22 +316,22 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
       {activeTab === 'absences' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-4 border-b bg-gray-50">
-            <h2 className="text-xl font-semibold">Absences</h2>
+            <h2 className="text-xl font-semibold">Fehlzeiten</h2>
             <p className="text-sm text-gray-600">
-              Showing {filteredAbsences.length} of {rawData.absences.length} absences
+              Zeige {filteredAbsences.length} von {rawData.absences.length} Fehlzeiten
             </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Time</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Subject</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Reason</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Excused</th>
-                </tr>
-              </thead>
+<thead className="bg-gray-50">
+                 <tr>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Datum</th>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Zeit</th>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Fach</th>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Grund</th>
+                   <th className="px-4 py-3 text-left font-medium text-gray-600">Entschuldigt</th>
+                 </tr>
+               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredAbsences.map((absence) => (
                   <tr key={absence.id} className={absence.isExcused ? 'bg-green-50' : 'bg-red-50'}>
@@ -339,23 +339,23 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
                     <td className="px-4 py-3 font-mono">{absence.startTime} - {absence.endTime}</td>
                     <td className="px-4 py-3">{absence.subject || '-'}</td>
                     <td className="px-4 py-3">{absence.reason || '-'}</td>
-                    <td className="px-4 py-3">
-                      {absence.isExcused ? (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Excused</span>
-                      ) : (
-                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Unexcused</span>
-                      )}
-                    </td>
+<td className="px-4 py-3">
+                       {absence.isExcused ? (
+                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Entschuldigt</span>
+                       ) : (
+                         <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Nicht entschuldigt</span>
+                       )}
+                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {filteredAbsences.length === 0 && (
-            <div className="p-8 text-center text-gray-500">
-              No absences found for the selected date range.
-            </div>
-          )}
+{filteredAbsences.length === 0 && (
+             <div className="p-8 text-center text-gray-500">
+               Keine Fehlzeiten für den ausgewählten Zeitraum gefunden.
+             </div>
+           )}
         </div>
       )}
 
@@ -364,46 +364,46 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
         <div className="space-y-6">
           {/* Calculated Stats */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Calculated Statistics (Filtered Data)</h2>
+            <h2 className="text-xl font-semibold mb-4">Berechnete Statistiken (Gefilterte Daten)</h2>
             <p className="text-gray-600 mb-4">
-              Statistics calculated from the filtered lessons and absences in the selected date range.
+              Statistiken berechnet aus den gefilterten Stunden und Fehlzeiten im ausgewählten Zeitraum.
             </p>
             
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <div className="bg-blue-50 p-4 rounded-lg text-center">
                 <div className="text-3xl font-bold text-blue-600">{calculatedStats.totalLessons}</div>
-                <div className="text-sm text-gray-600">Total Lessons</div>
+                <div className="text-sm text-gray-600">Gesamtstunden</div>
               </div>
               <div className="bg-green-50 p-4 rounded-lg text-center">
                 <div className="text-3xl font-bold text-green-600">{calculatedStats.actualLessons}</div>
-                <div className="text-sm text-gray-600">Actual Lessons</div>
+                <div className="text-sm text-gray-600">Tatsächliche Stunden</div>
               </div>
               <div className="bg-red-50 p-4 rounded-lg text-center">
                 <div className="text-3xl font-bold text-red-600">{calculatedStats.totalAbsences}</div>
-                <div className="text-sm text-gray-600">Absences</div>
+                <div className="text-sm text-gray-600">Fehlzeiten</div>
               </div>
               <div className="bg-yellow-50 p-4 rounded-lg text-center">
                 <div className="text-3xl font-bold text-yellow-600">{calculatedStats.cancelledLessons}</div>
-                <div className="text-sm text-gray-600">Cancelled</div>
+                <div className="text-sm text-gray-600">Abgesagt</div>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg text-center">
                 <div className="text-3xl font-bold text-purple-600">{calculatedStats.attendanceRate}%</div>
-                <div className="text-sm text-gray-600">Attendance</div>
+                <div className="text-sm text-gray-600">Anwesenheit</div>
               </div>
             </div>
 
             {/* Subject Breakdown */}
-            <h3 className="text-lg font-semibold mb-3">Subject Breakdown</h3>
+            <h3 className="text-lg font-semibold mb-3">Fach-Aufschlüsselung</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-medium text-gray-600">Subject</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-600">Total</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-600">Attended</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-600">Absent</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-600">Cancelled</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-600">Absence Rate</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">Fach</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600">Gesamt</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600">Anwesend</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600">Fehlend</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600">Abgesagt</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600">Fehlquote</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -433,28 +433,28 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
           {/* Stored Stats */}
           {storedStats && (
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Stored Statistics (Last Sync)</h2>
+              <h2 className="text-xl font-semibold mb-4">Gespeicherte Statistiken (Letzte Synchronisation)</h2>
               <p className="text-gray-600 mb-4">
-                Statistics stored in the database from the last sync operation.
-                These are calculated from the last 30 days of data.
+                Statistiken, die in der Datenbank vom letzten Synchronisationsvorgang gespeichert wurden.
+                Diese wurden aus den letzten 30 Tagen Daten berechnet.
               </p>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-blue-50 p-4 rounded-lg text-center">
                   <div className="text-3xl font-bold text-blue-600">{storedStats.absences7Days}</div>
-                  <div className="text-sm text-gray-600">Last 7 Days</div>
+                  <div className="text-sm text-gray-600">Letzte 7 Tage</div>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg text-center">
                   <div className="text-3xl font-bold text-blue-600">{storedStats.absences14Days}</div>
-                  <div className="text-sm text-gray-600">Last 14 Days</div>
+                  <div className="text-sm text-gray-600">Letzte 14 Tage</div>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg text-center">
                   <div className="text-3xl font-bold text-blue-600">{storedStats.absences30Days}</div>
-                  <div className="text-sm text-gray-600">Last 30 Days</div>
+                  <div className="text-sm text-gray-600">Letzte 30 Tage</div>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg text-center">
                   <div className="text-3xl font-bold text-blue-600">{storedStats.totalAbsences}</div>
-                  <div className="text-sm text-gray-600">All Time</div>
+                  <div className="text-sm text-gray-600">Gesamt</div>
                 </div>
               </div>
 
@@ -468,15 +468,15 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
 
           {/* Daily Trend */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Daily Trend (Filtered Data)</h2>
+            <h2 className="text-xl font-semibold mb-4">Täglicher Trend (Gefilterte Daten)</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-600">Total Lessons</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-600">Absences</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-600">Absence Rate</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">Datum</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600">Gesamtstunden</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600">Fehlzeiten</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-600">Fehlquote</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">

@@ -22,8 +22,8 @@ export interface ShopThemeDefinition {
 export const SHOP_THEMES: readonly ShopThemeDefinition[] = [
     {
         id: "DEFAULT",
-        name: "Default",
-        description: "Clean and minimal with a neutral dashboard background.",
+        name: "Standard",
+        description: "Sauber und minimal mit einem neutralen Dashboard-Hintergrund.",
         priceEuroCents: 0,
         previewClass: "from-slate-100 via-white to-slate-200",
         pageClass: "bg-gray-50",
@@ -34,7 +34,7 @@ export const SHOP_THEMES: readonly ShopThemeDefinition[] = [
         id: "MIDNIGHT",
         name: "Midnight Pulse",
         description:
-            "Deep indigo panels with a neon edge for focused late-night sessions.",
+            "Tiefe Indigo-Panels mit Neon-Kante für fokussierte Nachtsitzungen.",
         priceEuroCents: 99,
         previewClass: "from-slate-950 via-indigo-900 to-cyan-700",
         pageClass:
@@ -46,7 +46,7 @@ export const SHOP_THEMES: readonly ShopThemeDefinition[] = [
         id: "SUNSET",
         name: "Sunset Glow",
         description:
-            "Warm coral and amber tones that make the dashboard feel energetic.",
+            "Warme Korallen- und Bernsteintöne, die das Dashboard energiegeladen wirken lassen.",
         priceEuroCents: 149,
         previewClass: "from-orange-500 via-rose-500 to-purple-700",
         pageClass: "bg-gradient-to-br from-orange-50 via-rose-50 to-purple-100",
@@ -57,7 +57,7 @@ export const SHOP_THEMES: readonly ShopThemeDefinition[] = [
         id: "FOREST",
         name: "Forest Calm",
         description:
-            "Fresh greens and soft shadows for a quieter, more grounded look.",
+            "Frische Grüntöne und sanfte Schatten für ein ruhigeres, verwurzelteres Aussehen.",
         priceEuroCents: 199,
         previewClass: "from-emerald-800 via-green-700 to-lime-500",
         pageClass: "bg-gradient-to-br from-emerald-50 via-green-50 to-lime-100",
@@ -68,7 +68,7 @@ export const SHOP_THEMES: readonly ShopThemeDefinition[] = [
         id: "AURORA",
         name: "Aurora Drift",
         description:
-            "A vivid premium gradient with teal, violet, and blue highlights.",
+            "Ein lebhafter Premium-Verlauf mit Blau, Violett und Türkistönen.",
         priceEuroCents: 299,
         previewClass: "from-teal-400 via-sky-500 to-violet-600",
         pageClass: "bg-gradient-to-br from-sky-50 via-cyan-50 to-violet-100",

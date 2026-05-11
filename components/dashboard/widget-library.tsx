@@ -75,7 +75,7 @@ export function WidgetLibrary({
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-100">
                     <h2 className="text-xl font-semibold text-gray-900">
-                        Widget Library
+                        Widget-Bibliothek
                     </h2>
                     <button
                         onClick={onClose}
@@ -134,7 +134,7 @@ export function WidgetLibrary({
                                                 )}
                                                 {isAdded && !isLocked && (
                                                     <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                                        Added
+                                                        Hinzugefügt
                                                     </span>
                                                 )}
                                             </div>
@@ -163,7 +163,7 @@ export function WidgetLibrary({
                                             >
                                                 {isAdded ? (
                                                     <span className="text-sm font-medium">
-                                                        Added
+                                                        Hinzugefügt
                                                     </span>
                                                 ) : (
                                                     <Plus className="w-5 h-5" />
@@ -181,8 +181,8 @@ export function WidgetLibrary({
                 <div className="p-6 border-t border-gray-100 bg-gray-50">
                     <p className="text-sm text-gray-500 text-center">
                         {maxWidgets === null
-                            ? "You can add as many widgets as you like on this plan."
-                            : `You can add up to ${maxWidgets} widgets on the ${planConfig.name} plan.`}
+                            ? "Sie können so viele Widgets hinzufügen, wie Sie möchten."
+                            : `Sie können bis zu ${maxWidgets} Widgets im ${planConfig.name}-Plan hinzufügen.`}
                     </p>
                 </div>
             </div>

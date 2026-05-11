@@ -70,8 +70,8 @@ export function DashboardHeader({
                         Dashboard
                     </h1>
                     <p className="mt-1 text-sm text-slate-600">
-                        Refresh data, change your layout, or visit the shop for
-                        new themes and upgrades.
+                        Daten aktualisieren, Layout ändern oder Shop für neue
+                        Themes und Upgrades besuchen.
                     </p>
                 </div>
 
@@ -107,12 +107,12 @@ export function DashboardHeader({
                         {isSyncing ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                Loading...
+                                Wird geladen...
                             </>
                         ) : (
                             <>
                                 <RefreshCw className="w-4 h-4" />
-                                Reload
+                                Neu laden
                             </>
                         )}
                     </button>
@@ -122,7 +122,7 @@ export function DashboardHeader({
                             className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
                         >
                             <Plus className="w-4 h-4" />
-                            Add Widget
+                            Widget hinzufügen
                         </button>
                     )}
                     <button
@@ -142,12 +142,12 @@ export function DashboardHeader({
                         ) : isEditMode ? (
                             <>
                                 <Save className="w-4 h-4" />
-                                Save Layout
+                                Layout speichern
                             </>
                         ) : (
                             <>
                                 <Edit3 className="w-4 h-4" />
-                                Edit Dashboard
+                                Dashboard bearbeiten
                             </>
                         )}
                     </button>

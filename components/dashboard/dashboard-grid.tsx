@@ -457,7 +457,7 @@ export function DashboardGrid({
         if (!widgetStats) {
             return (
                 <div className="flex flex-col items-center justify-center h-full gap-2">
-                    <p className="text-gray-500">No data available</p>
+                    <p className="text-gray-500">Keine Daten verfügbar</p>
                     <button
                         onClick={handleManualSync}
                         disabled={isSyncing}
@@ -466,12 +466,12 @@ export function DashboardGrid({
                         {isSyncing ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                Syncing...
+                                Synchronisiere...
                             </>
                         ) : (
                             <>
                                 <RefreshCw className="w-4 h-4" />
-                                Sync Now
+                                Jetzt synchronisieren
                             </>
                         )}
                     </button>
@@ -574,7 +574,7 @@ export function DashboardGrid({
             default:
                 return (
                     <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500">Unknown widget type</p>
+                        <p className="text-gray-500">Unbekannter Widget-Typ</p>
                     </div>
                 );
         }
@@ -616,7 +616,7 @@ export function DashboardGrid({
                                             handleRemoveWidget(widget.id)
                                         }
                                         className="absolute top-3 right-3 z-10 rounded-md border border-gray-200 bg-white/95 p-1.5 text-gray-400 shadow-sm transition-colors hover:text-red-500"
-                                        title={`Remove ${
+                                        title={`Entfernen ${
                                             WIDGET_DEFINITIONS[widget.type]
                                                 ?.name ?? "widget"
                                         }`}
@@ -647,17 +647,17 @@ export function DashboardGrid({
                         <Plus className="w-8 h-8 text-gray-400" />
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        No widgets yet
+                        Noch keine Widgets
                     </h3>
                     <p className="text-gray-500 mb-4">
-                        Add widgets to customize your dashboard
+                        Widgets hinzufügen, um Ihr Dashboard anzupassen
                     </p>
                     <button
                         onClick={() => setIsLibraryOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
-                        Add Widget
+                        Widget hinzufügen
                     </button>
                 </div>
             )}

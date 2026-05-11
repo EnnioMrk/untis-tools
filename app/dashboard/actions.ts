@@ -27,7 +27,7 @@ import {
 } from "@/types/widget";
 import { triggerImmediateSync } from "@/lib/sync";
 import { getSchoolYearStart } from "@/lib/school-year";
-import { getUserAccessState } from "@/lib/subscription";
+import { getUserAccessState } from "@/lib/access-engine";
 
 /**
  * Validate widget layout based on user's plan
@@ -214,21 +214,7 @@ export async function getUserWidgets(): Promise<WidgetData[]> {
         return sanitizeWidgetsForPlan(DEFAULT_WIDGETS, "BASIC");
     }
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-            id: true,
-            plan: true,
-            planSource: true,
-            isAdmin: true,
-            trialEndsAt: true,
-            accessEndsAt: true,
-            referralBonusMonths: true,
-        },
-    });
-    const userPlan = (
-        user ? getUserAccessState(user).effectivePlan : "BASIC"
-    ) as AppPlan;
+    const userPlan = ((await getUserAccessState(session.user.id)).effectivePlan || "BASIC") as AppPlan;
 
     const widgets = await prisma.widget.findMany({
         where: { userId: session.user.id },
@@ -318,23 +304,7 @@ export async function saveWidgetLayout(
     }
 
     try {
-        // Get user's current plan
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: {
-                id: true,
-                plan: true,
-                planSource: true,
-                isAdmin: true,
-                trialEndsAt: true,
-                accessEndsAt: true,
-                referralBonusMonths: true,
-            },
-        });
-
-        const userPlan = (
-            user ? getUserAccessState(user).effectivePlan : "BASIC"
-        ) as AppPlan;
+        const userPlan = ((await getUserAccessState(session.user.id)).effectivePlan || "BASIC") as AppPlan;
 
         // Validate widget layout based on user's plan
         const validation = validateWidgetLayout(widgets, userPlan);
@@ -416,20 +386,7 @@ export async function getUserPlan(): Promise<AppPlan> {
         return "BASIC";
     }
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-            id: true,
-            plan: true,
-            planSource: true,
-            isAdmin: true,
-            trialEndsAt: true,
-            accessEndsAt: true,
-            referralBonusMonths: true,
-        },
-    });
-
-    return (user ? getUserAccessState(user).effectivePlan : "BASIC") as AppPlan;
+    return (await getUserAccessState(session.user.id)).effectivePlan as AppPlan;
 }
 
 /**

@@ -51,19 +51,18 @@ export default async function DevTestPage({
             <div className="min-h-screen bg-gray-50 p-8">
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-3xl font-bold text-gray-900 mb-8">
-                        Dev Test Site
+                        Dev-Test-Bereich
                     </h1>
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
                         <h2 className="text-xl font-semibold text-yellow-800 mb-2">
-                            No Untis Connection
+                            Keine Untis-Verbindung
                         </h2>
                         <p className="text-yellow-700">
-                            You need to connect your Untis account first. Go to
-                            the{" "}
+                            Sie müssen zuerst Ihr Untis-Konto verbinden. Gehen Sie zur{" "}
                             <a href="/onboarding" className="underline">
-                                onboarding page
+                                Onboarding-Seite
                             </a>{" "}
-                            to connect.
+                            um eine Verbindung herzustellen.
                         </p>
                     </div>
                 </div>

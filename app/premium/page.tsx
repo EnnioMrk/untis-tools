@@ -1,17 +1,20 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check, Clock3, Gift, ShieldAlert, Sparkles } from "lucide-react";
+import {
+    Clock3,
+    Gift,
+    ShieldAlert,
+    Sparkles,
+} from "lucide-react";
 import { auth } from "@/lib/auth";
 import { getAvailablePlans, type AppPlan } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 import { PlanButton } from "@/components/premium/premium-button";
 import { PremiumBadge } from "@/components/premium/premium-badge";
 import { ReferralCodeCard } from "@/components/premium/referral-code-card";
-import {
-    formatPlanName,
-    formatPlanSource,
-    getUserAccessState,
-} from "@/lib/subscription";
+import { MultiPlanSelector } from "@/components/premium/multi-plan-selector";
+import { getUserAccessState } from "@/lib/access-engine";
+import { formatPlanName, formatPlanSource } from "@/lib/subscription";
 
 function formatDate(value: Date | null) {
     if (!value) {
@@ -37,9 +40,6 @@ export default async function PremiumPage() {
             id: true,
             plan: true,
             planSource: true,
-            trialEndsAt: true,
-            accessEndsAt: true,
-            referralBonusMonths: true,
             ownedReferralCode: {
                 select: {
                     code: true,
@@ -54,6 +54,18 @@ export default async function PremiumPage() {
                     },
                 },
             },
+            accessGrants: {
+                where: { status: { in: ["ACTIVE", "PENDING"] } },
+                select: {
+                    id: true,
+                    type: true,
+                    status: true,
+                    months: true,
+                    expiresAt: true,
+                    sourceUserId: true,
+                },
+                orderBy: [{ status: "asc" }, { createdAt: "asc" }],
+            },
         },
     });
 
@@ -61,54 +73,44 @@ export default async function PremiumPage() {
         redirect("/auth/signin");
     }
 
-    const accessState = getUserAccessState({
-        id: user.id,
-        plan: user.plan,
-        planSource: user.planSource,
-        isAdmin: false,
-        trialEndsAt: user.trialEndsAt,
-        accessEndsAt: user.accessEndsAt,
-        referralBonusMonths: user.referralBonusMonths,
-    });
+    const accessState = await getUserAccessState(session.user.id);
     const currentPlan = user.plan as AppPlan;
     const effectivePlan = accessState.effectivePlan as AppPlan;
     const plans = getAvailablePlans();
     const comparisonRows = [
-        { name: "Dashboard Widgets", key: "dashboardWidgets" },
-        { name: "Widget Types", key: "widgetTypes" },
+        { name: "Dashboard-Widgets", key: "dashboardWidgets" },
+        { name: "Widget-Typen", key: "widgetTypes" },
         { name: "Themes", key: "themes" },
-        { name: "Statistics Range", key: "statisticsRange" },
-        { name: "Data Export", key: "dataExport" },
-        { name: "Priority Support", key: "prioritySupport" },
-        { name: "Early Access", key: "earlyAccess" },
+        { name: "Statistikbereich", key: "statisticsRange" },
+        { name: "Datenexport", key: "dataExport" },
+        { name: "Prioritäts-Support", key: "prioritySupport" },
+        { name: "Frühzeitiger Zugriff", key: "earlyAccess" },
     ] as const;
 
-    const statusText = accessState.trialActive
-        ? `Premium trial active until ${formatDate(user.trialEndsAt)}`
-        : accessState.bonusActive
-          ? `Bonus month active until ${formatDate(user.accessEndsAt)}`
-          : accessState.hasAccess
-            ? `${formatPlanName(currentPlan)} subscription active`
-            : "No active subscription";
+    const pendingGrants = user.accessGrants.filter((g) => g.status === "PENDING");
+    const statusText = accessState.hasAccess
+        ? `${formatPlanName(effectivePlan)} aktiv bis ${formatDate(accessState.expiresAt)}`
+        : "Kein aktives Abonnement";
 
     return (
         <div className="min-h-screen bg-gray-50 px-4 py-12 dark:bg-gray-900">
             <div className="mx-auto flex max-w-6xl flex-col gap-8">
+                {/* Header */}
                 <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-xl dark:border-gray-700 dark:bg-gray-800">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-3xl">
                             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
                                 <Sparkles className="h-4 w-4" />
-                                Subscriptions
+                                Abonnements
                             </div>
                             <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-                                Choose your plan
+                                Wählen Sie Ihren Plan
                             </h1>
                             <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
-                                UntisStats is a subscription product with three
-                                paid tiers: Basic, Standard, and Premium.
-                                Referral signups receive one free Premium month
-                                before a subscription is required.
+                                UntisStats ist ein Abonnement-Produkt mit drei
+                                kostenpflichtigen Stufen: Basic, Standard und Premium.
+                                Durch Empfehlungen erhalten Sie einen kostenlosen Premium-Monat,
+                                bevor ein Abonnement erforderlich ist.
                             </p>
                         </div>
 
@@ -117,17 +119,18 @@ export default async function PremiumPage() {
                                 href="/premium/trial-ended"
                                 className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-black dark:bg-white dark:text-slate-900"
                             >
-                                View renewal prompt
+                                Erneuerungsaufforderung anzeigen
                             </Link>
                         )}
                     </div>
                 </section>
 
+                {/* Current Status Cards */}
                 <section className="grid gap-4 md:grid-cols-3">
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                             <Sparkles className="h-4 w-4" />
-                            Effective access
+                            Aktiver Zugriff
                         </div>
                         <div className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">
                             {formatPlanName(effectivePlan)}
@@ -140,13 +143,13 @@ export default async function PremiumPage() {
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                             <Clock3 className="h-4 w-4" />
-                            Billing source
+                            Abrechnungsquelle
                         </div>
                         <div className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">
-                            {formatPlanSource(user.planSource)}
+                            {formatPlanSource(accessState.source)}
                         </div>
                         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            Selected tier:{" "}
+                            Ausgewählte Stufe:{" "}
                             <strong>{formatPlanName(currentPlan)}</strong>
                         </p>
                     </div>
@@ -154,36 +157,39 @@ export default async function PremiumPage() {
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                             <Gift className="h-4 w-4" />
-                            Referral bonuses
+                            Wartende Bonusmonate
                         </div>
                         <div className="mt-3 text-3xl font-bold text-gray-900 dark:text-white">
-                            {user.referralBonusMonths}
+                            {pendingGrants.length}
                         </div>
                         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            Queued bonus months unlock after your current paid
-                            billing cycle ends.
+                            {pendingGrants.length > 0
+                                ? "Nächster Monat durch Empfehlungsbonus gedeckt"
+                                : "Keine Bonusmonate wartend"}
                         </p>
                     </div>
                 </section>
 
+                {/* No Access Warning */}
                 {!accessState.hasAccess && (
                     <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10">
                         <div className="flex items-start gap-3">
                             <ShieldAlert className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
                             <div>
                                 <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">
-                                    Subscription required
+                                    Abonnement erforderlich
                                 </h2>
                                 <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
-                                    Your trial or bonus access is no longer
-                                    active. Choose a plan below to continue
-                                    using the app.
+                                    Ihr Testzugang oder Bonuszugang ist nicht mehr
+                                    aktiv. Wählen Sie einen Plan unten, um die App
+                                    weiterhin zu nutzen.
                                 </p>
                             </div>
                         </div>
                     </section>
                 )}
 
+                {/* Single Plan Cards */}
                 <section className="grid gap-8 md:grid-cols-3">
                     {plans.map((plan) => (
                         <article
@@ -218,22 +224,19 @@ export default async function PremiumPage() {
                                     {plan.monthlyPriceLabel}
                                 </span>
                                 <span className="text-gray-600 dark:text-gray-400">
-                                    /month
+                                    /Monat
                                 </span>
+                                {plan.yearlyPriceLabel && (
+                                    <span className="ml-2 text-sm text-gray-500 dark:text-gray-400 line-through">
+                                        {plan.yearlyPriceLabel}/Monat
+                                    </span>
+                                )}
                             </div>
-                            <ul className="mt-6 space-y-3">
-                                {plan.featureList.map((feature) => (
-                                    <li
-                                        key={feature}
-                                        className="flex items-start gap-3"
-                                    >
-                                        <Check className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
-                                        <span className="text-gray-700 dark:text-gray-300">
-                                            {feature}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
+                            {plan.yearlySavings && (
+                                <span className="mt-2 inline-block text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                    {plan.yearlySavings}
+                                </span>
+                            )}
 
                             <PlanButton
                                 className="mt-8"
@@ -246,22 +249,44 @@ export default async function PremiumPage() {
                     ))}
                 </section>
 
+                {/* Multi-Plan Checkout Section */}
+                <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                    <div className="flex items-center gap-3 mb-6">
+                        <Sparkles className="h-6 w-6 text-violet-500" />
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            Mehrere Pläne zusammen kaufen
+                        </h2>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        Kaufen Sie Plätze über mehrere Stufen in einer einzigen
+                        Transaktion. Ideal für Teams mit gemischten Bedürfnissen.
+                    </p>
+
+                    <MultiPlanSelector
+                        currentPlan={currentPlan}
+                        planSource={user.planSource}
+                        hasActiveAccess={accessState.hasAccess}
+                    />
+                </section>
+
+                {/* Referral */}
                 <ReferralCodeCard
                     initialCode={user.ownedReferralCode?.code || null}
                     referredByCode={user.redeemedReferral?.code.code || null}
-                    bonusMonths={user.referralBonusMonths}
+                    bonusMonths={pendingGrants.length}
                 />
 
+                {/* Feature Comparison */}
                 <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        Feature comparison
+                        Feature-Vergleich
                     </h2>
                     <div className="mt-6 overflow-x-auto">
                         <table className="w-full min-w-180">
                             <thead>
                                 <tr className="border-b border-gray-200 dark:border-gray-700">
                                     <th className="px-4 py-4 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Feature
+                                        Funktion
                                     </th>
                                     {plans.map((plan) => (
                                         <th

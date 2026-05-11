@@ -1,16 +1,9 @@
 import type { Plan, PlanSource } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-
-type AccessUser = {
-    id: string;
-    plan: Plan;
-    planSource: PlanSource;
-    isAdmin: boolean;
-    trialEndsAt: Date | null;
-    accessEndsAt: Date | null;
-    referralBonusMonths: number;
-};
+import { isPlanAtLeast, type PaidPlan } from "./plans";
+import type { AccessState } from "./access-engine";
+import { refreshGrants } from "./access-engine";
 
 export function addMonths(date: Date, months: number): Date {
     const nextDate = new Date(date);
@@ -30,12 +23,16 @@ export function formatPlanName(plan: Plan): string {
     return "Basic";
 }
 
-export function formatPlanSource(source: PlanSource): string {
+export function formatPlanSource(source: string): string {
     switch (source) {
         case "SUBSCRIPTION":
             return "subscription";
         case "TRIAL":
             return "trial";
+        case "ADMIN":
+            return "admin grant";
+        case "REFERRAL":
+        case "COUPON":
         case "BONUS":
             return "bonus month";
         default:
@@ -43,77 +40,40 @@ export function formatPlanSource(source: PlanSource): string {
     }
 }
 
-export function getUserAccessState(user: AccessUser) {
-    const now = new Date();
-    const trialActive =
-        user.planSource === "TRIAL" &&
-        Boolean(user.trialEndsAt && user.trialEndsAt > now);
-    const bonusActive =
-        user.planSource === "BONUS" &&
-        Boolean(user.accessEndsAt && user.accessEndsAt > now);
-    const standardAccess = user.planSource === "SUBSCRIPTION";
-    const hasAccess = standardAccess || trialActive || bonusActive;
-    const effectivePlan: Plan = trialActive ? "PREMIUM" : user.plan;
-    const trialExpired =
-        user.planSource === "TRIAL" &&
-        Boolean(user.trialEndsAt && user.trialEndsAt <= now);
-    const bonusExpired =
-        user.planSource === "BONUS" &&
-        Boolean(user.accessEndsAt && user.accessEndsAt <= now);
-
-    return {
-        hasAccess,
-        effectivePlan,
-        trialActive,
-        bonusActive,
-        trialExpired,
-        bonusExpired,
-        shouldResetExpiredAccess: trialExpired || bonusExpired,
-    };
+export async function getUserAccessState(
+    userId: string,
+): Promise<AccessState> {
+    return refreshGrants(userId);
 }
 
 export async function getUserAccessSnapshot(userId: string) {
-    return prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            id: true,
-            plan: true,
-            planSource: true,
-            isAdmin: true,
-            trialEndsAt: true,
-            accessEndsAt: true,
-            referralBonusMonths: true,
-        },
-    });
+    const access = await refreshGrants(userId);
+    return {
+        id: userId,
+        plan: access.effectivePlan,
+        planSource: access.source as PlanSource,
+        hasAccess: access.hasAccess,
+        expiresAt: access.expiresAt,
+    };
 }
 
 export async function ensureActiveSubscriptionAccess(userId: string) {
-    const user = await getUserAccessSnapshot(userId);
-
-    if (!user) {
-        redirect("/auth/signin");
-    }
-
-    const accessState = getUserAccessState(user);
+    const accessState = await refreshGrants(userId);
 
     if (!accessState.hasAccess) {
-        if (accessState.shouldResetExpiredAccess) {
-            await prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    planSource: "NONE",
-                    trialEndsAt: null,
-                    accessEndsAt: null,
-                    paddleSubscriptionId: null,
-                },
-            });
-        }
-
         redirect("/premium/trial-ended");
     }
 
     return {
-        user,
+        user: await prisma.user.findUniqueOrThrow({
+            where: { id: userId },
+            select: {
+                id: true,
+                plan: true,
+                planSource: true,
+                isAdmin: true,
+            },
+        }),
         accessState,
     };
 }
@@ -129,4 +89,13 @@ export async function ensureAdminAccess(userId: string) {
     }
 
     return user;
+}
+
+export function getEffectivePlanFromMultiPlans(
+    plans: { plan: PaidPlan; billingPeriod: string; quantity: number }[],
+): PaidPlan {
+    if (plans.length === 0) return "BASIC";
+    return plans.reduce<PaidPlan>((highest, p) =>
+        isPlanAtLeast(highest, p.plan) ? highest : p.plan,
+    "BASIC" as PaidPlan);
 }

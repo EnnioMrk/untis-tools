@@ -241,7 +241,7 @@ export function TimetableClient({
                                 onClick={goToCurrentWeek}
                                 className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                             >
-                                Today
+                                Heute
                             </button>
                         </div>
 
@@ -256,13 +256,13 @@ export function TimetableClient({
                 </div>
             </div>
 
-            {/* Timetable grid */}
+{/* Timetable grid */}
             <div className="max-w-7xl mx-auto px-4 py-6">
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                     {/* Day headers */}
                     <div className="grid grid-cols-8 border-b border-gray-200 bg-gray-50">
                         <div className="p-3 text-sm font-medium text-gray-500 text-center border-r border-gray-200">
-                            Time
+                            Zeit
                         </div>
                         {weekDates.map((date, index) => {
                             const isToday =
@@ -291,7 +291,7 @@ export function TimetableClient({
                     {/* Time slots and lessons */}
                     {timeSlots.length === 0 ? (
                         <div className="p-12 text-center text-gray-500">
-                            <p>No lessons scheduled for this week</p>
+                            <p>Keine Stunden in dieser Woche geplant</p>
                         </div>
                     ) : (
                         <div className="divide-y divide-gray-200">
@@ -391,21 +391,19 @@ export function TimetableClient({
                 <div className="mt-6 flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-white border border-gray-200 rounded"></div>
-                        <span className="text-gray-600">Regular Lesson</span>
+                        <span className="text-gray-600">Regulärer Unterricht</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-gray-200 rounded"></div>
-                        <span className="text-gray-600">Cancelled</span>
+                        <span className="text-gray-600">Abgesagt</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-yellow-100 border-l-4 border-yellow-400 rounded"></div>
-                        <span className="text-gray-600">
-                            Changed (Irregular)
-                        </span>
+                        <span className="text-gray-600">Geändert (Unregelmäßig)</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-red-100 border-l-4 border-red-400 rounded"></div>
-                        <span className="text-gray-600">Absent</span>
+                        <span className="text-gray-600">Fehlend</span>
                     </div>
                 </div>
             </div>

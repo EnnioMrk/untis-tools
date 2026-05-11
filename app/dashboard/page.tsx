@@ -13,6 +13,9 @@ import {
 } from "./actions";
 import { auth } from "@/lib/auth";
 import { ensureActiveSubscriptionAccess } from "@/lib/subscription";
+import { prisma } from "@/lib/prisma";
+import { Plan } from "@prisma/client";
+import { SubscriptionUpgradePrompt } from "@/components/premium/subscription-upgrade-prompt";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +36,7 @@ export default async function DashboardPage() {
     }
 
     // Fetch user data in parallel
-    const [stats, widgets, plan, activeTheme, dataStartDate, presetDates] =
+    const [stats, widgets, plan, activeTheme, dataStartDate, presetDates, user] =
         await Promise.all([
             getUserStatsNoCache(),
             getUserWidgets(),
@@ -41,6 +44,15 @@ export default async function DashboardPage() {
             getUserTheme(),
             getDataStartDate(),
             getPresetDateOptions(),
+            prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: {
+                    plan: true,
+                    planSource: true,
+                    paddleSubscriptionId: true,
+                    isAdmin: true,
+                },
+            }),
         ]);
 
     const themeConfig = getShopTheme(activeTheme);
@@ -59,6 +71,18 @@ export default async function DashboardPage() {
                     presetDates={presetDates}
                 />
             </div>
+
+            {/* Premium Subscription Upgrade Prompt */}
+            {user && (
+                <SubscriptionUpgradePrompt
+                    currentPlan={user.plan as Plan}
+                    userPlan={plan as AppPlan}
+                    planSource={user.planSource}
+                    hasActiveAccess={true}
+                    paddleSubscriptionId={user.paddleSubscriptionId}
+                    isAdmin={user.isAdmin}
+                />
+            )}
         </main>
     );
 }

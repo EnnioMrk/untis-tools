@@ -35,6 +35,9 @@ export interface PlanConfig {
     description: string;
     monthlyPrice: number;
     monthlyPriceLabel: string;
+    yearlyPrice?: number;
+    yearlyPriceLabel?: string;
+    yearlySavings?: string;
     ctaLabel: string;
     highlight?: "popular" | "premium";
     featureList: string[];

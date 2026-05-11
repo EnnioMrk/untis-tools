@@ -53,28 +53,28 @@ export function ReferralCodeCard({
                 <div className="max-w-2xl">
                     <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
                         <Gift className="h-4 w-4" />
-                        Referrals
+                        Empfehlung
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        Invite friends
+                        Freunde einladen
                     </h2>
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        Friends who sign up with your referral code get their
-                        first month as Premium for free. After they convert to a
-                        paid subscription, you earn one bonus month for your
-                        current plan.
+                        Freunde, die sich mit Ihrem Empfehlungscode anmelden,
+                        erhalten ihren ersten Monat als Premium kostenlos. Nachdem
+                        sie ein kostenpflichtiges Abonnement abgeschlossen haben,
+                        erhalten Sie einen Bonusmonat für Ihren aktuellen Plan.
                     </p>
                     {referredByCode && (
                         <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                            You joined with referral code{" "}
+                            Sie haben sich mit Empfehlungscode{" "}
                             <span className="font-semibold text-gray-900 dark:text-white">
                                 {referredByCode}
                             </span>
-                            .
+                            angemeldet.
                         </p>
                     )}
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        Bonus months queued:{" "}
+                        Bonusmonate wartend:{" "}
                         <span className="font-semibold text-gray-900 dark:text-white">
                             {bonusMonths}
                         </span>
@@ -85,7 +85,7 @@ export function ReferralCodeCard({
                     {code ? (
                         <>
                             <div className="text-xs font-medium uppercase tracking-wide text-violet-700 dark:text-violet-300">
-                                Your referral code
+                                Ihr Empfehlungscode
                             </div>
                             <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-lg font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white">
                                 <span>{code}</span>
@@ -95,7 +95,7 @@ export function ReferralCodeCard({
                                     className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                                 >
                                     <Copy className="h-4 w-4" />
-                                    Copy
+                                    Kopieren
                                 </button>
                             </div>
                         </>
@@ -111,7 +111,7 @@ export function ReferralCodeCard({
                             ) : (
                                 <Sparkles className="h-4 w-4" />
                             )}
-                            {isPending ? "Creating..." : "Create referral code"}
+                            {isPending ? "Erstelle..." : "Empfehlungscode erstellen"}
                         </button>
                     )}
 

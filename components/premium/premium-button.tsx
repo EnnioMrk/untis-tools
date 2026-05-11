@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { initializePaddle, type Paddle } from "@paddle/paddle-js";
+import { useRouter } from "next/navigation";
+import { initializePaddle, PaddleEventData } from "@paddle/paddle-js";
 import {
     getPlanConfig,
     isPlanAtLeast,
@@ -19,6 +20,10 @@ interface PremiumButtonProps {
     planSource?: PlanSource;
     hasActiveAccess?: boolean;
     className?: string;
+    billingPeriod?: "monthly" | "yearly";
+    onCheckoutComplete?: () => void;
+    onClick?: () => void;
+    continueUrl?: string;
 }
 
 export function PlanButton({
@@ -27,8 +32,13 @@ export function PlanButton({
     planSource = "NONE",
     hasActiveAccess = false,
     className = "",
+    billingPeriod = "monthly",
+    onCheckoutComplete,
+    onClick,
+    continueUrl,
 }: PremiumButtonProps) {
-    const [paddle, setPaddle] = useState<Paddle | undefined>(undefined);
+    const router = useRouter();
+    const [paddle, setPaddle] = useState<boolean>(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const targetPlanConfig = getPlanConfig(targetPlan);
@@ -49,25 +59,44 @@ export function PlanButton({
             try {
                 const clientToken =
                     process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || "";
-                const paddleInstance = await initializePaddle({
+                await initializePaddle({
                     environment: inferClientPaddleEnvironment(
                         clientToken,
                         process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT,
                     ),
                     token: clientToken,
+                    eventCallback: (event: PaddleEventData) => {
+                        if (event.name === "checkout.completed") {
+                            if (onCheckoutComplete) {
+                                onCheckoutComplete();
+                            } else if (continueUrl) {
+                                router.push(continueUrl);
+                                router.refresh();
+                            } else {
+                                router.push("/premium");
+                                router.refresh();
+                            }
+                        }
+                    },
                 });
-                setPaddle(paddleInstance);
+                setPaddle(true);
             } catch (err) {
                 console.error("Failed to initialize Paddle:", err);
             }
         };
 
         initPaddle();
-    }, []);
+    }, [router, onCheckoutComplete]);
 
     const handleCheckout = useCallback(async () => {
         if (!paddle) {
-            setError("Payment system is not ready. Please try again.");
+            setError("Zahlungssystem noch nicht bereit. Bitte versuchen Sie es erneut.");
+            return;
+        }
+
+        // If parent provided an onClick handler, use it instead of default checkout
+        if (onClick) {
+            onClick();
             return;
         }
 
@@ -75,7 +104,7 @@ export function PlanButton({
         setError(null);
 
         try {
-            const result = await openCheckout(targetPlan);
+            const result = await openCheckout(targetPlan, continueUrl);
 
             if (!result.success) {
                 setError(result.error || "Failed to start checkout");
@@ -85,7 +114,7 @@ export function PlanButton({
 
             if (result.checkoutId) {
                 // Open Paddle checkout overlay
-                paddle.Checkout.open({
+                (window as any).Paddle?.Checkout.open({
                     transactionId: result.checkoutId,
                     settings: {
                         displayMode: "overlay",
@@ -96,11 +125,11 @@ export function PlanButton({
             }
         } catch (err) {
             console.error("Checkout error:", err);
-            setError("Failed to start checkout. Please try again.");
+            setError("Konnte Checkout nicht starten. Bitte versuchen Sie es erneut.");
         } finally {
             setLoading(false);
         }
-    }, [paddle, targetPlan]);
+    }, [paddle, targetPlan, onClick, continueUrl]);
 
     if (hasCurrentOrHigherPlan) {
         return (
@@ -122,8 +151,8 @@ export function PlanButton({
                     <Crown className="w-5 h-5" />
                 )}
                 {isCurrentPlan
-                    ? `${targetPlanConfig.name} Active`
-                    : "Included in your current plan"}
+                    ? `${targetPlanConfig.name} aktiv`
+                    : "In Ihrem aktuellen Plan enthalten"}
             </button>
         );
     }
@@ -135,7 +164,7 @@ export function PlanButton({
                 className={`w-full py-3 px-6 text-white font-medium rounded-lg flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-600 ${className}`}
             >
                 <Sparkles className="w-5 h-5" />
-                Premium trial active
+                Premium-Test aktiv
             </button>
         );
     }
@@ -161,7 +190,7 @@ export function PlanButton({
                 {loading ? (
                     <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Loading...
+                        Wird geladen...
                     </>
                 ) : (
                     <>
@@ -176,7 +205,7 @@ export function PlanButton({
             </button>
             {!paddle && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
-                    Loading payment system...
+                    Lade Zahlungssystem...
                 </p>
             )}
         </div>

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { addMonths } from "@/lib/subscription";
 
 export function normalizeCode(value: string | null | undefined): string {
     return (value || "")
@@ -62,9 +63,15 @@ export async function findAvailableReferralCode(rawCode: string) {
     return referralCode;
 }
 
+/**
+ * Grant a referral reward (PENDING ACCESS GRANT) to the referrer
+ * when the referred user successfully pays.
+ */
 export async function grantReferralRewardForSubscriber(
     userId: string,
 ): Promise<void> {
+    const now = new Date();
+
     const redemption = await prisma.referralRedemption.findUnique({
         where: { referredUserId: userId },
         select: {
@@ -82,40 +89,62 @@ export async function grantReferralRewardForSubscriber(
         return;
     }
 
-    await prisma.$transaction(async (tx) => {
-        const currentRedemption = await tx.referralRedemption.findUnique({
-            where: { referredUserId: userId },
+    if (!redemption.code.ownerUserId) {
+        return;
+    }
+
+await prisma.$transaction(async (tx) => {
+      const currentRedemption = await tx.referralRedemption.findUnique({
+        where: { referredUserId: userId },
+        select: {
+          id: true,
+          rewardGrantedAt: true,
+          code: {
             select: {
-                id: true,
-                rewardGrantedAt: true,
-                code: {
-                    select: {
-                        ownerUserId: true,
-                    },
-                },
+              ownerUserId: true,
             },
-        });
+          },
+        },
+      });
 
-        if (!currentRedemption || currentRedemption.rewardGrantedAt) {
-            return;
-        }
+      if (!currentRedemption || currentRedemption.rewardGrantedAt) {
+        return;
+      }
 
-        await tx.referralRedemption.update({
-            where: { referredUserId: userId },
-            data: {
-                rewardGrantedAt: new Date(),
-            },
-        });
+      const ownerUserId = currentRedemption.code?.ownerUserId;
+      if (!ownerUserId) {
+        return;
+      }
 
-        if (currentRedemption.code.ownerUserId) {
-            await tx.user.update({
-                where: { id: currentRedemption.code.ownerUserId },
-                data: {
-                    referralBonusMonths: {
-                        increment: 1,
-                    },
-                },
-            });
-        }
+      await tx.referralRedemption.update({
+        where: { referredUserId: userId },
+        data: {
+          rewardGrantedAt: now,
+        },
+      });
+
+      const hasActiveGrant = await tx.accessGrant.findFirst({
+        where: {
+          userId: ownerUserId,
+          status: "ACTIVE",
+          expiresAt: { gt: now },
+        },
+      });
+
+      const timelineEnd = hasActiveGrant?.expiresAt ?? now;
+      const newExpiresAt = addMonths(timelineEnd, 1);
+
+      await tx.accessGrant.create({
+        data: {
+          userId: ownerUserId,
+          type: "REFERRAL",
+          status: "PENDING",
+          plan: "PREMIUM",
+          months: 1,
+          sourceUserId: userId ?? undefined,
+          activatedAt: now,
+          expiresAt: newExpiresAt,
+        },
+      });
     });
 }

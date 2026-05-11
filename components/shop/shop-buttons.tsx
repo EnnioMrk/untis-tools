@@ -86,18 +86,18 @@ export function BuyThemeButton({
                 {loading ? (
                     <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Opening checkout...
+                        Öffne Kasse...
                     </>
                 ) : (
                     <>
                         <ShoppingCart className="h-4 w-4" />
-                        Buy theme
+                        Theme kaufen
                     </>
                 )}
             </button>
             {!paddle && (
                 <p className="mt-2 text-xs text-gray-500">
-                    Loading payment system...
+                    Lade Zahlungssystem...
                 </p>
             )}
         </div>
@@ -143,17 +143,17 @@ export function ActivateThemeButton({
                 {isPending ? (
                     <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Applying...
+                        Wende an...
                     </>
                 ) : active ? (
                     <>
                         <Check className="h-4 w-4" />
-                        Active theme
+                        Aktiv
                     </>
                 ) : (
                     <>
                         <Palette className="h-4 w-4" />
-                        Apply theme
+                        Theme anwenden
                     </>
                 )}
             </button>

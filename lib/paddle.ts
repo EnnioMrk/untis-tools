@@ -3,6 +3,7 @@ import {
     Environment,
     type Customer,
     type Transaction,
+    type Payment,
 } from "@paddle/paddle-node-sdk";
 import { WebhooksValidator } from "@paddle/paddle-node-sdk";
 import type { PaidPlan } from "@/lib/plans";
@@ -83,6 +84,7 @@ export async function createCheckout(
     options: {
         userId: string;
         plan: PaidPlan;
+        continueUrl?: string;
     },
 ): Promise<Transaction | null> {
     if (!paddleClient) {
@@ -103,6 +105,7 @@ export async function createCheckout(
                 userId: options.userId,
                 plan: options.plan,
                 purchaseType: "SUBSCRIPTION",
+                continueUrl: options.continueUrl,
             },
         });
 
@@ -119,6 +122,7 @@ export async function createThemeCheckout(
     options: {
         userId: string;
         themeId: ShopThemeId;
+        continueUrl?: string;
     },
 ): Promise<Transaction | null> {
     if (!paddleClient) {
@@ -139,6 +143,7 @@ export async function createThemeCheckout(
                 userId: options.userId,
                 themeId: options.themeId,
                 purchaseType: "THEME",
+                continueUrl: options.continueUrl,
             },
         });
 
@@ -233,25 +238,65 @@ export async function verifyWebhookSignature(
 /**
  * Get the price ID from environment
  */
-export function getPriceId(plan: PaidPlan): string {
-    const priceId =
-        plan === "BASIC"
-            ? process.env.PADDLE_BASIC_PRICE_ID
-            : plan === "STANDARD"
-              ? process.env.PADDLE_STANDARD_PRICE_ID
-              : process.env.PADDLE_PREMIUM_PRICE_ID ||
-                process.env.PADDLE_PRICE_ID;
+export function getPriceId(
+    plan: PaidPlan,
+    billingPeriod: "monthly" | "yearly" = "monthly",
+): string {
+    const prefix = billingPeriod === "yearly" ? "PADDLE_YEARLY" : "PADDLE";
+
+    let priceId: string | undefined;
+
+    if (plan === "BASIC") {
+        priceId =
+            process.env[`${prefix}_BASIC_PRICE_ID`] ||
+            process.env[`${prefix}_PRICE_ID`];
+    } else if (plan === "STANDARD") {
+        priceId =
+            process.env[`${prefix}_STANDARD_PRICE_ID`] ||
+            process.env[`${prefix}_PRICE_ID`];
+    } else {
+        priceId =
+            process.env[`${prefix}_PREMIUM_PRICE_ID`] ||
+            process.env[`${prefix}_PRICE_ID`];
+    }
 
     if (!priceId) {
         throw new Error(
-            plan === "BASIC"
-                ? "PADDLE_BASIC_PRICE_ID is not set"
-                : plan === "STANDARD"
-                  ? "PADDLE_STANDARD_PRICE_ID is not set"
-                  : "PADDLE_PREMIUM_PRICE_ID is not set",
+            `${prefix}_${plan}_PRICE_ID or ${prefix}_PRICE_ID is not set`,
         );
     }
     return priceId;
+}
+
+/**
+ * Create a multi-plan checkout transaction
+ */
+export async function createMultiCheckout(
+    customerId: string,
+    checkoutItems: { priceId: string; quantity: number }[],
+    options: { userId: string; purchasedPlans: PaidPlan[]; continueUrl?: string },
+): Promise<Transaction | null> {
+    if (!paddleClient) {
+        throw new Error("Paddle client is not initialized");
+    }
+
+    try {
+        const transaction = await paddleClient.transactions.create({
+            customerId,
+            items: checkoutItems,
+            customData: {
+                customerId,
+                userId: options.userId,
+                purchasedPlans: options.purchasedPlans,
+                purchaseType: "MULTI_PLAN_SUBSCRIPTION",
+                continueUrl: options.continueUrl,
+            },
+        });
+        return transaction;
+    } catch (error) {
+        console.error("Failed to create multi-plan checkout transaction:", error);
+        throw error;
+    }
 }
 
 export function getThemePriceId(themeId: ShopThemeId): string {
@@ -285,6 +330,7 @@ export function resolvePlanFromPriceId(
         return null;
     }
 
+    // Check monthly price IDs
     if (priceId === process.env.PADDLE_BASIC_PRICE_ID) {
         return "BASIC";
     }
@@ -300,5 +346,27 @@ export function resolvePlanFromPriceId(
         return "PREMIUM";
     }
 
+    // Check yearly price IDs
+    if (priceId === process.env.PADDLE_YEARLY_BASIC_PRICE_ID) {
+        return "BASIC";
+    }
+
+    if (priceId === process.env.PADDLE_YEARLY_STANDARD_PRICE_ID) {
+        return "STANDARD";
+    }
+
+    if (
+        priceId === process.env.PADDLE_YEARLY_PREMIUM_PRICE_ID ||
+        priceId === process.env.PADDLE_YEARLY_PRICE_ID
+    ) {
+        return "PREMIUM";
+    }
+
     return null;
+}
+
+export function resolvePlansFromPriceIds(
+    priceIds: (string | null | undefined)[],
+): PaidPlan[] {
+    return priceIds.map(resolvePlanFromPriceId).filter(Boolean) as PaidPlan[];
 }
