@@ -3,7 +3,6 @@ import {
     Environment,
     type Customer,
     type Transaction,
-    type Payment,
 } from "@paddle/paddle-node-sdk";
 import { WebhooksValidator } from "@paddle/paddle-node-sdk";
 import type { PaidPlan } from "@/lib/plans";

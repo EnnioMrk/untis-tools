@@ -502,6 +502,7 @@ export default async function AdminPage() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <UpdateReferralCodeForm
+                                                action={updateReferralCode}
                                                 codeId={code.id}
                                                 currentLabel={code.label || ""}
                                                 currentMaxRedemptions={code.maxRedemptions ?? undefined}

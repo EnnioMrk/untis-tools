@@ -7,7 +7,8 @@ import {
     type AppPlan,
     type PaidPlan,
 } from "@/lib/plans";
-import type { CheckoutItem, isValidCheckoutItems } from "@/lib/checkout/types";
+import type { CheckoutItem } from "@/lib/checkout/types";
+import { isValidCheckoutItems } from "@/lib/checkout/types";
 import {
     createCustomer,
     getCustomer,
