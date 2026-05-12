@@ -22,12 +22,20 @@ export interface SubjectStats {
     attended: number;
     /** Number of lessons absent */
     absences: number;
+    /** Number of lessons absent without excuse */
+    unexcusedAbsences: number;
     /** Number of lessons cancelled by school */
     cancelled: number;
     /** Total number of lessons */
     total: number;
     /** Absence rate as percentage (0-100) */
     absenceRate: number;
+    /** Primary teacher name (from most lessons) */
+    teacherName?: string;
+    /** Primary teacher kuerzel */
+    teacherKuerzel?: string;
+    /** Resolved subject name (e.g., "Mathematik") */
+    subjectName?: string;
 }
 
 /**
@@ -91,6 +99,8 @@ export interface UserStatsData {
     totalRealLessons: number;
     /** Total number of absences */
     totalAbsences: number;
+    /** Total number of unexcused absences */
+    totalUnexcusedAbsences: number;
 }
 
 /**
@@ -149,12 +159,18 @@ export interface UntisAbsence {
 export interface ProcessedLesson {
     /** Date as ISO string */
     date: string;
-    /** Subject name */
+    /** Subject name (display name like "Mathematik") */
     subject: string;
+    /** Original subject ID (like "E5.3-Ma1") for reference */
+    subjectId?: string;
     /** Whether the lesson was cancelled */
     isCancelled: boolean;
     /** Whether the student was absent */
     isAbsent: boolean;
+    /** Whether the absence is excused (true if excused, false if unexcused, undefined if not absent) */
+    isExcused?: boolean;
+    /** Teacher name (for subject breakdown) */
+    teacherName?: string;
 }
 
 /**

@@ -11,22 +11,30 @@ import {
     Legend,
 } from "recharts";
 import type { SubjectBreakdownItem } from "@/types/widget";
-import { formatSubjectDisplayName } from "@/lib/subject";
+import { formatSubjectName } from "@/lib/subject";
+import { useSettings } from "@/components/providers/settings-provider";
 
 interface SubjectBreakdownChartProps {
     data: SubjectBreakdownItem[];
 }
 
 export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
+    const { settings } = useSettings();
+    const useShort = settings?.useShortSubjectNames ?? true;
+    
     // Sort data by total lessons descending and take top 8
     const sortedData = [...data].sort((a, b) => b.total - a.total);
     const chartData = sortedData.slice(0, 8).map((item) => ({
-        name: formatSubjectDisplayName(item.subject),
-        fullName: formatSubjectDisplayName(item.subject),
+        name: formatSubjectName(item.subject, useShort),
+        fullName: formatSubjectName(item.subject, useShort),
         Attended: item.attended,
         Absences: item.absences,
         Cancelled: item.cancelled,
     }));
+
+    // Calculate YAxis width dynamically based on longest name
+    const maxLen = Math.max(...chartData.map(d => d.name.length), 0);
+    const yAxisWidth = Math.max(56, maxLen * 8);
 
     if (chartData.length === 0) {
         return (
@@ -51,7 +59,7 @@ export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
                     <BarChart
                         layout="vertical"
                         data={chartData}
-                        margin={{ top: 0, right: 8, left: -16, bottom: 0 }}
+                        margin={{ top: 0, right: 8, left: -32, bottom: 0 }}
                     >
                         <CartesianGrid
                             strokeDasharray="3 3"
@@ -68,7 +76,7 @@ export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
                             type="category"
                             dataKey="name"
                             tick={{ fontSize: 11 }}
-                            width={56}
+                            width={yAxisWidth}
                             interval={0}
                         />
                         <Tooltip

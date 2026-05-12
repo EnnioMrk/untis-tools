@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { type AppPlan } from "@/lib/plans";
 import { getShopTheme } from "@/lib/shop";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
+import { SettingsProvider } from "@/components/providers/settings-provider";
 import {
     getUserStatsNoCache,
     getUserWidgets,
@@ -10,6 +11,7 @@ import {
     getUserTheme,
     getDataStartDate,
     getPresetDateOptions,
+    getUserSettings,
 } from "./actions";
 import { auth } from "@/lib/auth";
 import { ensureActiveSubscriptionAccess } from "@/lib/subscription";
@@ -36,7 +38,7 @@ export default async function DashboardPage() {
     }
 
     // Fetch user data in parallel
-    const [stats, widgets, plan, activeTheme, dataStartDate, presetDates, user] =
+    const [stats, widgets, plan, activeTheme, dataStartDate, presetDates, user, settings] =
         await Promise.all([
             getUserStatsNoCache(),
             getUserWidgets(),
@@ -53,36 +55,39 @@ export default async function DashboardPage() {
                     isAdmin: true,
                 },
             }),
+            getUserSettings(),
         ]);
 
     const themeConfig = getShopTheme(activeTheme);
 
     return (
-        <main className={`min-h-screen ${themeConfig.pageClass}`}>
-            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-                <DashboardClient
-                    initialWidgets={widgets}
-                    initialStats={stats}
-                    userPlan={plan as AppPlan}
-                    activeTheme={activeTheme}
-                    isAdmin={Boolean(session.user.isAdmin)}
-                    initialDate={dataStartDate.date}
-                    isCustom={dataStartDate.isCustom}
-                    presetDates={presetDates}
-                />
-            </div>
+        <SettingsProvider initialSettings={settings}>
+            <main className={`min-h-screen ${themeConfig.pageClass}`}>
+                <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                    <DashboardClient
+                        initialWidgets={widgets}
+                        initialStats={stats}
+                        userPlan={plan as AppPlan}
+                        activeTheme={activeTheme}
+                        isAdmin={Boolean(session.user.isAdmin)}
+                        initialDate={dataStartDate.date}
+                        isCustom={dataStartDate.isCustom}
+                        presetDates={presetDates}
+                    />
+                </div>
 
-            {/* Premium Subscription Upgrade Prompt */}
-            {user && (
-                <SubscriptionUpgradePrompt
-                    currentPlan={user.plan as Plan}
-                    userPlan={plan as AppPlan}
-                    planSource={user.planSource}
-                    hasActiveAccess={true}
-                    paddleSubscriptionId={user.paddleSubscriptionId}
-                    isAdmin={user.isAdmin}
-                />
-            )}
-        </main>
+                {/* Premium Subscription Upgrade Prompt */}
+                {user && (
+                    <SubscriptionUpgradePrompt
+                        currentPlan={user.plan as Plan}
+                        userPlan={plan as AppPlan}
+                        planSource={user.planSource}
+                        hasActiveAccess={true}
+                        paddleSubscriptionId={user.paddleSubscriptionId}
+                        isAdmin={user.isAdmin}
+                    />
+                )}
+            </main>
+        </SettingsProvider>
     );
 }

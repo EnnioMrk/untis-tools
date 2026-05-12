@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enums
+
+enum Plan {
+  BASIC
+  STANDARD
+  PREMIUM
+}
+
+enum PlanSource {
+  NONE
+  SUBSCRIPTION
+  TRIAL
+  BONUS
+  SIGNUP
+  ADMIN
+}
+
+enum GrantType {
+  SUBSCRIPTION
+  TRIAL
+  REFERRAL
+  COUPON
+  ADMIN
+}
+
+enum GrantStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+}
+
+enum ShopTheme {
+  DEFAULT
+  MIDNIGHT
+  SUNSET
+  FOREST
+  AURORA
+}
+
+enum WidgetType {
+  KPI_7DAYS
+  KPI_14DAYS
+  KPI_30DAYS
+  KPI_ALLTIME
+  ABSENCE_BAR
+  ABSENCE_TREND
+  SUBJECT_BREAKDOWN
+  ABSENCE_RECOMMENDER
+  ABSENCE_RATE
+  TOTAL_ABSENCE_BAR
+}
+
+// User Model
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  plan          Plan       @default(BASIC)
+  planSource    PlanSource @default(NONE)
+  isAdmin       Boolean    @default(false)
+  activeTheme   ShopTheme @default(DEFAULT)
+  
+// Paddle Integration
+  paddleCustomerId       String?
+  paddleSubscriptionId   String?
+
+// Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+// Relations
+  accounts        Account[]
+  sessions        Session[]
+  untisConnection UntisConnection?
+  userStats       UserStats?
+  widgets         Widget[]
+  themePurchases  ThemePurchase[]
+  ownedReferralCode ReferralCode? @relation("UserOwnedReferralCode")
+  redeemedReferral  ReferralRedemption? @relation("RedeemedReferral")
+  adminCreatedReferralCodes ReferralCode[] @relation("AdminCreatedReferralCodes")
+  adminCreatedCouponCodes CouponCode[] @relation("AdminCreatedCouponCodes")
+  accessGrants    AccessGrant[]
+  couponRedemptions CouponRedemption[]
+
+  @@index([plan])
+  @@index([isAdmin])
+}
+
+// Auth.js v5 Models
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String

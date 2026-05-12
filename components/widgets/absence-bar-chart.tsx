@@ -11,7 +11,8 @@ import {
     Cell,
 } from "recharts";
 import type { SubjectBreakdownItem } from "@/types/widget";
-import { formatSubjectDisplayName } from "@/lib/subject";
+import { formatSubjectName } from "@/lib/subject";
+import { useSettings } from "@/components/providers/settings-provider";
 
 interface AbsenceBarChartProps {
     data: SubjectBreakdownItem[];
@@ -32,13 +33,16 @@ const COLORS = [
 ];
 
 export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
+    const { settings } = useSettings();
+    const useShort = settings?.useShortSubjectNames ?? true;
+    
     // Sort data by absences descending
     const sortedData = [...data].sort((a, b) => b.absences - a.absences);
 
     // Take top 10 subjects
     const chartData = sortedData.slice(0, 10).map((item) => ({
-        name: formatSubjectDisplayName(item.subject),
-        fullName: formatSubjectDisplayName(item.subject),
+        name: formatSubjectName(item.subject, useShort),
+        fullName: formatSubjectName(item.subject, useShort),
         absences: item.absences,
     }));
 
@@ -56,7 +60,7 @@ export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 pb-0 h-full">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Absences by Subject
             </h3>
@@ -64,16 +68,24 @@ export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={chartData}
-                        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                        margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
                         barCategoryGap="10%"
                     >
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                         <XAxis
                             dataKey="name"
                             interval={0}
-                            tick={{ fontSize: 11 }}
-                            height={28}
-                            padding={{ left: 0, right: 0 }}
+                            tick={({ x, y, index, payload }) => {
+                                const isStaggered = !useShort;
+                                const offsetY = isStaggered ? (index % 2 === 0 ? -10 : 10) : 0;
+                                return (
+                                    <text x={x} y={Number(y) + 12 + offsetY} textAnchor="middle" fontSize={11}>
+                                        {payload.value}
+                                    </text>
+                                );
+                            }}
+                            height={!useShort ? 45 : 28}
+                            padding={{ left: 10, right: 10 }}
                             tickMargin={8}
                         />
                         <YAxis

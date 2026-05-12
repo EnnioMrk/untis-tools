@@ -42,6 +42,29 @@ async function fetchTimetable(
 }
 
 /**
+ * Fetch subjects data for a user from Untis
+ */
+async function fetchSubjects(
+  untis: WebUntisSecretAuth
+): Promise<Map<number, string>> {
+  try {
+    const subjects = await untis.getSubjects();
+    const subjectMap = new Map<number, string>();
+    for (const subject of subjects) {
+      // Use longName for full subject name, fallback to name or alternateName
+      const name = subject.longName || subject.alternateName || subject.name;
+      if (name) {
+        subjectMap.set(subject.id, name);
+      }
+    }
+    return subjectMap;
+  } catch (error) {
+    logger.warn('Failed to fetch subjects', { error });
+    return new Map();
+  }
+}
+
+/**
  * Fetch absence data for a user from Untis
  */
 async function fetchAbsences(
@@ -98,51 +121,55 @@ async function syncUser(
     logger.info(`Sync date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
     
     // Fetch data
-    const [timetable, absences] = await Promise.all([
+    const [timetable, absences, subjectMap] = await Promise.all([
       fetchTimetable(untis, startDate, endDate),
       fetchAbsences(untis, startDate, endDate),
+      fetchSubjects(untis),
     ]);
     
     logger.info(`Fetched ${timetable.length} lessons and ${absences.length} absences for user ${userId}`);
+    logger.info(`Fetched ${subjectMap.size} subjects for user ${userId}`);
     
-    // Calculate new statistics
-    const stats = calculateStats(timetable, absences);
-    
-     // Save to database
-     await prisma.userStats.upsert({
-       where: { userId },
-       create: {
-         userId,
-         absences7Days: stats.absenceCounts.last7Days,
-         absences14Days: stats.absenceCounts.last14Days,
-         absences30Days: stats.absenceCounts.last30Days,
-         
-         trend7Days: stats.trendChanges.last7Days as any,
-         trend14Days: stats.trendChanges.last14Days as any,
-         trend30Days: stats.trendChanges.last30Days as any,
-         subjectBreakdown: stats.subjectBreakdown as any,
-         dailyTrend: stats.dailyTrend as any,
-         lastCalculated: new Date(),
-         absenceRate: stats.absenceRate,
-         totalRealLessons: stats.totalRealLessons,
-         totalAbsences: stats.totalAbsences,
-       },
-       update: {
-         absences7Days: stats.absenceCounts.last7Days,
-         absences14Days: stats.absenceCounts.last14Days,
-         absences30Days: stats.absenceCounts.last30Days,
-         
-         trend7Days: stats.trendChanges.last7Days as any,
-         trend14Days: stats.trendChanges.last14Days as any,
-         trend30Days: stats.trendChanges.last30Days as any,
-         subjectBreakdown: stats.subjectBreakdown as any,
-         dailyTrend: stats.dailyTrend as any,
-         lastCalculated: new Date(),
-         absenceRate: stats.absenceRate,
-         totalRealLessons: stats.totalRealLessons,
-         totalAbsences: stats.totalAbsences,
-       },
-     });
+// Calculate new statistics
+     const stats = calculateStats(timetable, absences, subjectMap);
+     
+      // Save to database
+      await prisma.userStats.upsert({
+        where: { userId },
+        create: {
+          userId,
+          absences7Days: stats.absenceCounts.last7Days,
+          absences14Days: stats.absenceCounts.last14Days,
+          absences30Days: stats.absenceCounts.last30Days,
+          
+          trend7Days: stats.trendChanges.last7Days as any,
+          trend14Days: stats.trendChanges.last14Days as any,
+          trend30Days: stats.trendChanges.last30Days as any,
+          subjectBreakdown: stats.subjectBreakdown as any,
+          dailyTrend: stats.dailyTrend as any,
+          lastCalculated: new Date(),
+          absenceRate: stats.absenceRate,
+          totalRealLessons: stats.totalRealLessons,
+          totalAbsences: stats.totalAbsences,
+          totalUnexcusedAbsences: stats.totalUnexcusedAbsences,
+        },
+        update: {
+          absences7Days: stats.absenceCounts.last7Days,
+          absences14Days: stats.absenceCounts.last14Days,
+          absences30Days: stats.absenceCounts.last30Days,
+          
+          trend7Days: stats.trendChanges.last7Days as any,
+          trend14Days: stats.trendChanges.last14Days as any,
+          trend30Days: stats.trendChanges.last30Days as any,
+          subjectBreakdown: stats.subjectBreakdown as any,
+          dailyTrend: stats.dailyTrend as any,
+          lastCalculated: new Date(),
+          absenceRate: stats.absenceRate,
+          totalRealLessons: stats.totalRealLessons,
+          totalAbsences: stats.totalAbsences,
+          totalUnexcusedAbsences: stats.totalUnexcusedAbsences,
+        },
+      });
     
     // Update lastSyncAt on the connection
     await prisma.untisConnection.update({

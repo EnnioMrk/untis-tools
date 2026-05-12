@@ -147,8 +147,11 @@ export async function triggerImmediateSync(userId: string): Promise<{
             total: data.total,
             attended: data.attended,
             absences: data.absences,
+            unexcusedAbsences: data.unexcusedAbsences,
             cancelled: data.cancelled,
             absenceRate: data.absenceRate,
+            teacherName: data.teacherName,
+            teacherKuerzel: data.teacherKuerzel,
         }));
 
         // Convert dailyTrend to array if needed
@@ -174,6 +177,7 @@ export async function triggerImmediateSync(userId: string): Promise<{
                 absenceRate: stats.absenceRate,
                 totalRealLessons: stats.totalRealLessons,
                 totalAbsences: stats.totalAbsences,
+                totalUnexcusedAbsences: stats.totalUnexcusedAbsences,
             },
             update: {
                 absences7Days: stats.absenceCounts.last7Days,
@@ -189,6 +193,7 @@ export async function triggerImmediateSync(userId: string): Promise<{
                 absenceRate: stats.absenceRate,
                 totalRealLessons: stats.totalRealLessons,
                 totalAbsences: stats.totalAbsences,
+                totalUnexcusedAbsences: stats.totalUnexcusedAbsences,
             },
         });
         console.log('[triggerImmediateSync] Stats saved to database');

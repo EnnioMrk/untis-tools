@@ -18,7 +18,6 @@
         "prisma:generate": "bun --bun run prisma generate --config prisma/prisma.config.ts"
     },
     "dependencies": {
-        "@auth/prisma-adapter": "^2",
         "@paddle/paddle-js": "^1.6.2",
         "@paddle/paddle-node-sdk": "^3.6.0",
         "@prisma/adapter-pg": "^7.4.1",

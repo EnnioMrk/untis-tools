@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle, AlertCircle, XCircle } from "lucide-react";
 import type { SubjectBreakdownItem } from "@/types/widget";
 import { formatSubjectDisplayName } from "@/lib/subject";
+import { useSettings } from "@/components/providers/settings-provider";
 
 interface AbsenceRecommenderProps {
     data: SubjectBreakdownItem[];

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { type AppPlan } from "@/lib/plans";
 import { getShopTheme, type ShopThemeId } from "@/lib/shop";
+import { useSettings } from "@/components/providers/settings-provider";
 import {
     RefreshCw,
     Plus,
@@ -12,9 +13,13 @@ import {
     Loader2,
     ShoppingBag,
     Shield,
+    BookOpen,
+    Settings,
+    AlertTriangle,
 } from "lucide-react";
 import { DateRangePicker } from "@/components/dashboard/date-range-picker";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
+import { SettingsModal } from "@/components/settings/settings-modal";
 import type { WidgetData, UserStatsResponse } from "@/types/widget";
 
 interface DashboardHeaderProps {
@@ -27,10 +32,12 @@ interface DashboardHeaderProps {
     isEditMode: boolean;
     isSaving: boolean;
     isSyncing: boolean;
+    showOnlyUnexcusedAbsences: boolean;
     onDateChange: () => void;
     onReloadClick: () => void;
     onAddWidgetClick: () => void;
     onEditSaveClick: () => void;
+    onSettingsClick: () => void;
 }
 
 export function DashboardHeader({
@@ -43,17 +50,31 @@ export function DashboardHeader({
     isEditMode,
     isSaving,
     isSyncing,
+    showOnlyUnexcusedAbsences,
     onDateChange,
     onReloadClick,
     onAddWidgetClick,
     onEditSaveClick,
+    onSettingsClick,
 }: DashboardHeaderProps) {
     const themeConfig = getShopTheme(activeTheme);
 
     return (
-        <div
-            className={`relative z-20 mb-6 rounded-3xl border p-5 shadow-sm backdrop-blur ${themeConfig.headerClass}`}
-        >
+        <>
+            {showOnlyUnexcusedAbsences && (
+                <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+                    <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                        <p className="text-sm text-yellow-800">
+                            <strong>Hinweis:</strong> Nur unentschuldigte Fehlstunden werden angezeigt.
+                            Andere Daten werden ausgeblendet.
+                        </p>
+                    </div>
+                </div>
+            )}
+            <div
+                className={`relative z-20 mb-6 rounded-3xl border p-5 shadow-sm backdrop-blur ${themeConfig.headerClass}`}
+            >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <div className="mb-3 flex flex-wrap gap-2 text-sm">
@@ -82,6 +103,13 @@ export function DashboardHeader({
                     >
                         <ShoppingBag className="w-4 h-4" />
                         Shop
+                    </Link>
+                    <Link
+                        href="/faecher"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
+                    >
+                        <BookOpen className="w-4 h-4" />
+                        Fächer
                     </Link>
                     {isAdmin && (
                         <Link
@@ -151,9 +179,17 @@ export function DashboardHeader({
                             </>
                         )}
                     </button>
+                    <button
+                        onClick={onSettingsClick}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
+                    >
+                        <Settings className="w-4 h-5" />
+                        Einstellungen
+                    </button>
                 </div>
             </div>
-        </div>
+            </div>
+        </>
     );
 }
 
@@ -183,6 +219,10 @@ export function DashboardClient({
     const [isSaving, setIsSaving] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [libraryTrigger, setLibraryTrigger] = useState(0);
+    const [showSettings, setShowSettings] = useState(false);
+    const { settings } = useSettings();
+
+    const showOnlyUnexcusedAbsences = settings?.showOnlyUnexcusedAbsences ?? false;
 
     const handleDateChange = () => {
         // We don't need to increment refreshKey here because DateRangePicker calls router.refresh()
@@ -209,33 +249,39 @@ export function DashboardClient({
     };
 
     return (
-        <div>
-            <DashboardHeader
-                userPlan={userPlan}
-                activeTheme={activeTheme}
-                isAdmin={isAdmin}
-                initialDate={initialDate}
-                isCustom={isCustom}
-                presetDates={presetDates}
-                isEditMode={isEditMode}
-                isSaving={isSaving}
-                isSyncing={isSyncing}
-                onDateChange={handleDateChange}
-                onReloadClick={handleReloadClick}
-                onAddWidgetClick={handleAddWidgetClick}
-                onEditSaveClick={handleEditSaveClick}
-            />
-            <DashboardGrid
-                initialWidgets={initialWidgets}
-                stats={initialStats}
-                userPlan={userPlan}
-                refreshKey={refreshKey}
-                isEditMode={isEditMode}
-                onEditModeChange={setIsEditMode}
-                onSavingChange={setIsSaving}
-                onSyncingChange={setIsSyncing}
-                libraryTrigger={libraryTrigger}
-            />
-        </div>
+        <>
+            <div>
+                <DashboardHeader
+                    userPlan={userPlan}
+                    activeTheme={activeTheme}
+                    isAdmin={isAdmin}
+                    initialDate={initialDate}
+                    isCustom={isCustom}
+                    presetDates={presetDates}
+                    isEditMode={isEditMode}
+                    isSaving={isSaving}
+                    isSyncing={isSyncing}
+                    showOnlyUnexcusedAbsences={showOnlyUnexcusedAbsences}
+                    onDateChange={handleDateChange}
+                    onReloadClick={handleReloadClick}
+                    onAddWidgetClick={handleAddWidgetClick}
+                    onEditSaveClick={handleEditSaveClick}
+                    onSettingsClick={() => setShowSettings(true)}
+                />
+                <DashboardGrid
+                    initialWidgets={initialWidgets}
+                    stats={initialStats}
+                    userPlan={userPlan}
+                    refreshKey={refreshKey}
+                    isEditMode={isEditMode}
+                    onEditModeChange={setIsEditMode}
+                    onSavingChange={setIsSaving}
+                    onSyncingChange={setIsSyncing}
+                    libraryTrigger={libraryTrigger}
+                    showOnlyUnexcusedAbsences={showOnlyUnexcusedAbsences}
+                />
+            </div>
+            {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+        </>
     );
 }

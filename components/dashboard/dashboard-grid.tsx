@@ -62,6 +62,7 @@ interface DashboardGridProps {
     onSavingChange?: (saving: boolean) => void;
     onSyncingChange?: (syncing: boolean) => void;
     libraryTrigger?: number;
+    showOnlyUnexcusedAbsences?: boolean;
 }
 
 // Grid configuration
@@ -155,14 +156,43 @@ export function DashboardGrid({
     onSavingChange,
     onSyncingChange,
     libraryTrigger,
+    showOnlyUnexcusedAbsences = false,
 }: DashboardGridProps) {
-    const renderCount = useRef(0);
-    const prevWidgetsJson = useRef("");
     const [isSyncingInternal, setIsSyncingInternal] = useState(false);
     const [syncError, setSyncError] = useState<string | null>(null);
     const [currentStats, setCurrentStats] = useState<UserStatsResponse | null>(
         stats,
     );
+
+    // Filter stats if only unexcused absences should be shown
+    const displayStats = useMemo(() => {
+        if (!currentStats) return null;
+        
+        if (!showOnlyUnexcusedAbsences) return currentStats;
+        
+        // Filter subject breakdown to only show unexcused absences
+        const filteredSubjectBreakdown = currentStats.subjectBreakdown.map(item => ({
+            ...item,
+            absences: item.unexcusedAbsences,
+            absenceRate: item.total > 0 ? Math.round((item.unexcusedAbsences / (item.total - item.cancelled)) * 100 * 100) / 100 : 0,
+        }));
+        
+        // Recalculate totals for unexcused only
+        const totalUnexcused = currentStats.totalUnexcusedAbsences;
+        const newAbsenceRate = currentStats.totalRealLessons > 0 
+            ? Math.round((totalUnexcused / currentStats.totalRealLessons) * 100 * 100) / 100 
+            : 0;
+        
+        return {
+            ...currentStats,
+            absences7Days: 0, // We don't have time-filtered unexcused data
+            absences14Days: 0,
+            absences30Days: 0,
+            totalAbsences: totalUnexcused,
+            absenceRate: newAbsenceRate,
+            subjectBreakdown: filteredSubjectBreakdown,
+        };
+    }, [currentStats, showOnlyUnexcusedAbsences]);
 
     // Use external edit mode if provided, otherwise use internal state
     const [internalEditMode, setInternalEditMode] = useState(false);
@@ -209,25 +239,6 @@ export function DashboardGrid({
         }
     }, [stats]);
 
-    // Debug: Track re-renders
-    useEffect(() => {
-        renderCount.current += 1;
-        const currentWidgetsJson = JSON.stringify(widgets);
-        if (
-            prevWidgetsJson.current &&
-            prevWidgetsJson.current !== currentWidgetsJson
-        ) {
-            console.log(
-                `[DashboardGrid] Render #${renderCount.current}, widgets changed`,
-            );
-        } else if (renderCount.current > 10) {
-            console.warn(
-                `[DashboardGrid] HIGH RENDER COUNT: ${renderCount.current} - potential infinite loop!`,
-            );
-        }
-        prevWidgetsJson.current = currentWidgetsJson;
-    });
-
     // Auto-save layout when exiting edit mode
     const prevEditMode = useRef(isEditMode);
     useEffect(() => {
@@ -269,7 +280,11 @@ export function DashboardGrid({
     }, []);
 
     useEffect(() => {
-        setWidgets(normalizeWidgetData(initialWidgets));
+        const normalized = normalizeWidgetData(initialWidgets);
+        setWidgets((prev) => {
+            const hasChanged = normalized.some((w, i) => w !== prev[i]);
+            return hasChanged ? normalized : prev;
+        });
     }, [initialWidgets]);
 
     const layouts = useMemo(() => buildLayoutsForGrid(widgets), [widgets]);
@@ -300,13 +315,15 @@ export function DashboardGrid({
             }
 
             layoutUpdateTimeout.current = setTimeout(() => {
-                setWidgets((prev) =>
-                    applyLayoutsToWidgetState(
+                setWidgets((prev) => {
+                    const next = applyLayoutsToWidgetState(
                         prev,
                         nextLayouts,
                         currentBreakpoint,
-                    ),
-                );
+                    );
+                    const hasChanged = next.some((w, i) => w !== prev[i]);
+                    return hasChanged ? next : prev;
+                });
             }, 100);
         },
         [currentBreakpoint],
@@ -328,7 +345,10 @@ export function DashboardGrid({
         }
 
         pendingLayoutsRef.current = null;
-        setWidgets(widgetsToSave);
+        setWidgets((prev) => {
+            const hasChanged = widgetsToSave.some((w, i) => w !== prev[i]);
+            return hasChanged ? widgetsToSave : prev;
+        });
 
         setIsSaving(true);
         try {
@@ -453,7 +473,7 @@ export function DashboardGrid({
 
     // Render widget content
     const renderWidgetContent = (widget: WidgetData) => {
-        const widgetStats = currentStats;
+        const widgetStats = displayStats;
         if (!widgetStats) {
             return (
                 <div className="flex flex-col items-center justify-center h-full gap-2">

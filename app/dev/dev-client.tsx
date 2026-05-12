@@ -237,9 +237,66 @@ export function DevTestClient({ rawData, storedStats, currentFilter }: DevTestCl
                 Zurücksetzen
               </button>
             </div>
-          </div>
+</div>
 
-          {/* Stats Summary */}
+           {/* Download Button */}
+             <div className="mb-6 pt-4 border-t">
+               <div className="flex gap-2">
+                 <button
+                   onClick={() => {
+                     const dataStr = JSON.stringify({ lessons: rawData.lessons, absences: rawData.absences, teachers: rawData.teachers }, null, 2);
+                     const blob = new Blob([dataStr], { type: 'application/json' });
+                     const url = URL.createObjectURL(blob);
+                     const a = document.createElement('a');
+                     a.href = url;
+                     a.download = `untis-data-${new Date().toISOString().split('T')[0]}.json`;
+                     document.body.appendChild(a);
+                     a.click();
+                     document.body.removeChild(a);
+                     URL.revokeObjectURL(url);
+                   }}
+                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                 >
+                   Rohdaten als JSON herunterladen
+                 </button>
+                 <button
+                   onClick={() => {
+                     const dataStr = JSON.stringify(rawData.absences, null, 2);
+                     const blob = new Blob([dataStr], { type: 'application/json' });
+                     const url = URL.createObjectURL(blob);
+                     const a = document.createElement('a');
+                     a.href = url;
+                     a.download = `untis-absences-${new Date().toISOString().split('T')[0]}.json`;
+                     document.body.appendChild(a);
+                     a.click();
+                     document.body.removeChild(a);
+                     URL.revokeObjectURL(url);
+                   }}
+                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                 >
+                   Fehlzeiten als JSON herunterladen
+                 </button>
+                 <button
+                   onClick={() => {
+                     const dataStr = JSON.stringify(rawData.teachers, null, 2);
+                     const blob = new Blob([dataStr], { type: 'application/json' });
+                     const url = URL.createObjectURL(blob);
+                     const a = document.createElement('a');
+                     a.href = url;
+                     a.download = `untis-teachers-${new Date().toISOString().split('T')[0]}.json`;
+                     document.body.appendChild(a);
+                     a.click();
+                     document.body.removeChild(a);
+                     URL.revokeObjectURL(url);
+                   }}
+                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                 >
+                   Lehrer-Daten als JSON herunterladen
+                 </button>
+               </div>
+             </div>
+
+           {/* Stats Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{calculatedStats.totalLessons}</div>

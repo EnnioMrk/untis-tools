@@ -36,6 +36,14 @@ export interface RawUntisData {
     subject: string | null;
     lessonId: number | null;
   }>;
+  teachers: Array<{
+    id: number;
+    name: string;
+    foreName?: string;
+    longName?: string;
+    title?: string;
+    active?: boolean;
+    }>;
   lastSyncAt: string | null;
 }
 
@@ -48,7 +56,7 @@ export interface UntisDataFilter {
 }
 
 /**
- * Get raw Untis data (lessons and absences) for the current user
+ * Get raw Untis data (lessons, absences, and teachers) for the current user
  * This is a development/testing endpoint that shows all raw data
  */
 export async function getRawUntisData(
@@ -105,6 +113,17 @@ export async function getRawUntisData(
     const absenceData = await untis.getAbsentLesson(startDate, endDate);
     const absences = absenceData?.absences || [];
 
+    // Fetch all teachers
+    const teachersData = await untis.getTeachers() || [];
+    const teachers = teachersData.map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      foreName: t.foreName,
+      longName: t.longName,
+      title: t.title,
+      active: t.active,
+    }));
+
     // Logout
     try {
       await untis.logout();
@@ -155,6 +174,7 @@ export async function getRawUntisData(
     return {
       lessons: processedLessons,
       absences: processedAbsences,
+      teachers,
       lastSyncAt: connection.lastSyncAt?.toISOString() || null,
     };
   } catch (error) {

@@ -149,8 +149,11 @@ export async function getUserStats(
                     total?: number;
                     attended?: number;
                     absences?: number;
+                    unexcusedAbsences?: number;
                     cancelled?: number;
                     absenceRate?: number;
+                    teacherName?: string;
+                    teacherKuerzel?: string;
                 }
             >,
         ).map(([subject, data]) => ({
@@ -158,8 +161,11 @@ export async function getUserStats(
             total: data.total || 0,
             attended: data.attended || 0,
             absences: data.absences || 0,
+            unexcusedAbsences: data.unexcusedAbsences || 0,
             cancelled: data.cancelled || 0,
             absenceRate: data.absenceRate || 0,
+            teacherName: data.teacherName,
+            teacherKuerzel: data.teacherKuerzel,
         }));
     }
 
@@ -194,7 +200,16 @@ export async function getUserStats(
         absenceRate: userStats.absenceRate || 0,
         totalRealLessons: userStats.totalRealLessons || 0,
         totalAbsences: userStats.totalAbsences || 0,
+        totalUnexcusedAbsences: (userStats as any).totalUnexcusedAbsences ?? 0,
     };
+
+    // Fallback: if totalUnexcusedAbsences is missing from DB, calculate from subjectBreakdown
+    if (result.totalUnexcusedAbsences === 0) {
+        result.totalUnexcusedAbsences = subjectBreakdown.reduce(
+            (sum, item) => sum + (item.unexcusedAbsences || 0),
+            0
+        );
+    }
 
     // Cache the result if useCache is true
     if (useCache) {
@@ -581,4 +596,26 @@ export async function getPresetDateOptions(): Promise<
         const schoolYearStart = await getSchoolYearStart();
         return [{ label: "School year start", date: schoolYearStart }];
     }
+}
+
+/**
+ * Get the current user's settings
+ */
+export async function getUserSettings(): Promise<{
+    useShortSubjectNames: boolean;
+    showOnlyUnexcusedAbsences: boolean;
+}> {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { useShortSubjectNames: true, showOnlyUnexcusedAbsences: false };
+    }
+
+    const settings = await prisma.userSettings.findUnique({
+        where: { userId: session.user.id },
+    });
+
+    return {
+        useShortSubjectNames: settings?.useShortSubjectNames ?? true,
+        showOnlyUnexcusedAbsences: settings?.showOnlyUnexcusedAbsences ?? false,
+    };
 }

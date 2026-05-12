@@ -328,8 +328,11 @@ export interface SubjectBreakdownItem {
     total: number;
     attended: number;
     absences: number;
+    unexcusedAbsences: number;
     cancelled: number;
     absenceRate: number;
+    teacherName?: string;
+    teacherKuerzel?: string;
 }
 
 // Daily trend data from UserStats
@@ -360,6 +363,7 @@ export interface UserStatsResponse {
     absenceRate: number;
     totalRealLessons: number;
     totalAbsences: number;
+    totalUnexcusedAbsences: number;
 }
 
 // Default widgets for new users
