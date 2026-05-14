@@ -34,34 +34,34 @@ function SubjectCard({
         switch (severity) {
             case "critical":
                 return {
-                    bg: "bg-red-50",
-                    border: "border-red-200",
-                    icon: <XCircle className="w-5 h-5 text-red-500" />,
-                    badge: "bg-red-100 text-red-700",
+                    bg: "bg-destructive/10",
+                    border: "border-destructive/20",
+                    icon: <XCircle className="w-5 h-5 text-destructive" />,
+                    badge: "bg-destructive/10 text-destructive",
                     text: "Critical",
                 };
             case "warning":
                 return {
-                    bg: "bg-orange-50",
-                    border: "border-orange-200",
-                    icon: <AlertTriangle className="w-5 h-5 text-orange-500" />,
-                    badge: "bg-orange-100 text-orange-700",
+                    bg: "bg-warning/10",
+                    border: "border-warning/20",
+                    icon: <AlertTriangle className="w-5 h-5 text-warning" />,
+                    badge: "bg-warning/10 text-warning",
                     text: "Warning",
                 };
             case "caution":
                 return {
-                    bg: "bg-yellow-50",
-                    border: "border-yellow-200",
-                    icon: <AlertCircle className="w-5 h-5 text-yellow-500" />,
-                    badge: "bg-yellow-100 text-yellow-700",
+                    bg: "bg-warning/10",
+                    border: "border-warning/20",
+                    icon: <AlertCircle className="w-5 h-5 text-warning" />,
+                    badge: "bg-warning/10 text-warning",
                     text: "Caution",
                 };
             case "good":
                 return {
-                    bg: "bg-green-50",
-                    border: "border-green-200",
-                    icon: <CheckCircle className="w-5 h-5 text-green-500" />,
-                    badge: "bg-green-100 text-green-700",
+                    bg: "bg-success/10",
+                    border: "border-success/20",
+                    icon: <CheckCircle className="w-5 h-5 text-success" />,
+                    badge: "bg-success/10 text-success",
                     text: "Good",
                 };
         }
@@ -79,7 +79,7 @@ function SubjectCard({
                 <div className="flex-1">
                     <div className="flex items-center gap-2">
                         {styles.icon}
-                        <h4 className="font-medium text-gray-900">{subject}</h4>
+                        <h4 className="font-medium text-foreground">{subject}</h4>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
                         <span
@@ -87,20 +87,20 @@ function SubjectCard({
                         >
                             {styles.text}
                         </span>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-foreground">
                             {absenceRate.toFixed(1)}% absence rate
                         </span>
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">
+                    <p className="text-lg font-bold text-foreground">
                         {absences}/{realLessons}
                     </p>
-                    <p className="text-xs text-gray-500">absences</p>
+                    <p className="text-xs text-muted-foreground">absences</p>
                 </div>
             </div>
             {severity === "good" && hasAccess && (
-                <p className="text-xs text-green-600 mt-2">
+                <p className="text-xs text-success mt-2">
                     Can miss up to {remainingAbsences} more lesson
                     {remainingAbsences !== 1 ? "s" : ""}
                 </p>
@@ -126,10 +126,10 @@ export function AbsenceRecommender({
 
     if (sortedData.length === 0) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full flex items-center justify-center">
+            <div className="bg-card rounded-lg shadow-sm border border-border p-6 h-full flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-gray-500">No subject data available</p>
-                    <p className="text-sm text-gray-400 mt-1">
+                     <p className="text-muted-foreground">No subject data available</p>
+                     <p className="text-sm text-muted-foreground mt-1">
                         Data will appear after syncing with Untis
                     </p>
                 </div>
@@ -138,13 +138,13 @@ export function AbsenceRecommender({
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full">
+             <div className="bg-card rounded-lg shadow-sm border border-border p-6 h-full">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                 <h3 className="text-lg font-semibold text-foreground">
                     Absence Recommender
                 </h3>
                 {!hasAccess && (
-                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
+                         <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
                         {requiredPlanName}
                     </span>
                 )}
@@ -152,16 +152,16 @@ export function AbsenceRecommender({
 
             {!hasAccess ? (
                 <div className="flex flex-col items-center justify-center h-[calc(100%-3rem)] text-center">
-                    <div className="bg-gray-50 rounded-lg p-6 max-w-sm">
-                        <h4 className="font-medium text-gray-900 mb-2">
+                     <div className="bg-muted rounded-lg p-6 max-w-sm">
+                         <h4 className="font-medium text-foreground mb-2">
                             Unlock Absence Recommender
                         </h4>
-                        <p className="text-sm text-gray-600 mb-4">
+                         <p className="text-sm text-muted-foreground mb-4">
                             See which subjects you can safely miss without
                             exceeding your absence limit on the{" "}
                             {requiredPlanName} plan.
                         </p>
-                        <button className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+                         <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
                             View plans
                         </button>
                     </div>

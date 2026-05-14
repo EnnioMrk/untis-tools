@@ -208,7 +208,7 @@ export function MultiPlanSelector({
 
             {/* Quantity Controls for Selected Plans */}
             {selectedPlans.filter((sp) => sp.quantity > 0).length > 0 && (
-                <div className="mt-8 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                <div className="mt-8 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
                         Ausgewählte Plätze
                     </h3>
@@ -294,7 +294,7 @@ export function MultiPlanSelector({
                         <button
                             onClick={handleCheckout}
                             disabled={loading}
-                            className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:opacity-60"
                         >
                             {loading ? (
                                 <>

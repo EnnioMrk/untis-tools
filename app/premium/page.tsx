@@ -96,7 +96,7 @@ export default async function PremiumPage() {
         <div className="min-h-screen bg-gray-50 px-4 py-12 dark:bg-gray-900">
             <div className="mx-auto flex max-w-6xl flex-col gap-8">
                 {/* Header */}
-                <section className="rounded-3xl border border-gray-200 bg-white p-8 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                <section className="rounded-lg border border-gray-200 bg-white p-8 shadow-xl dark:border-gray-700 dark:bg-gray-800">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-3xl">
                             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
@@ -117,7 +117,7 @@ export default async function PremiumPage() {
                         {!accessState.hasAccess && (
                             <Link
                                 href="/premium/trial-ended"
-                                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-black dark:bg-white dark:text-slate-900"
+                                className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-black dark:bg-white dark:text-slate-900"
                             >
                                 Erneuerungsaufforderung anzeigen
                             </Link>
@@ -127,7 +127,7 @@ export default async function PremiumPage() {
 
                 {/* Current Status Cards */}
                 <section className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                             <Sparkles className="h-4 w-4" />
                             Aktiver Zugriff
@@ -140,7 +140,7 @@ export default async function PremiumPage() {
                         </p>
                     </div>
 
-                    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                             <Clock3 className="h-4 w-4" />
                             Abrechnungsquelle
@@ -154,7 +154,7 @@ export default async function PremiumPage() {
                         </p>
                     </div>
 
-                    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                         <div className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                             <Gift className="h-4 w-4" />
                             Wartende Bonusmonate
@@ -172,7 +172,7 @@ export default async function PremiumPage() {
 
                 {/* No Access Warning */}
                 {!accessState.hasAccess && (
-                    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10">
+                    <section className="rounded-lg border border-amber-200 bg-amber-50 p-6 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10">
                         <div className="flex items-start gap-3">
                             <ShieldAlert className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
                             <div>
@@ -194,7 +194,7 @@ export default async function PremiumPage() {
                     {plans.map((plan) => (
                         <article
                             key={plan.id}
-                            className={`relative rounded-2xl p-8 shadow-lg ${
+                            className={`relative rounded-lg p-8 shadow-lg ${
                                 plan.highlight === "premium"
                                     ? "border-2 border-blue-500 bg-white dark:bg-gray-800"
                                     : plan.highlight === "popular"
@@ -250,7 +250,7 @@ export default async function PremiumPage() {
                 </section>
 
                 {/* Multi-Plan Checkout Section */}
-                <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                <section className="rounded-lg border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
                     <div className="flex items-center gap-3 mb-6">
                         <Sparkles className="h-6 w-6 text-violet-500" />
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -277,7 +277,7 @@ export default async function PremiumPage() {
                 />
 
                 {/* Feature Comparison */}
-                <section className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                <section className="rounded-lg border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                         Feature-Vergleich
                     </h2>

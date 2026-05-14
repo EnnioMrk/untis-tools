@@ -101,7 +101,7 @@ export function DateRangePicker({
     const pickerContent = useMemo(
         () => (
             <div className="flex flex-col gap-3">
-                <label className="text-sm font-semibold text-gray-900">
+                <label className="text-sm font-semibold text-foreground">
                     Data starts from:
                 </label>
 
@@ -110,7 +110,7 @@ export function DateRangePicker({
                         <button
                             key={index}
                             onClick={() => handlePresetClick(preset.date)}
-                            className="text-xs px-2 py-1.5 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors font-medium"
+                            className="text-xs px-2 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-colors font-medium"
                             disabled={isPending}
                         >
                             {preset.label}
@@ -118,23 +118,23 @@ export function DateRangePicker({
                     ))}
                     <button
                         onClick={handleResetToDefault}
-                        className="text-xs px-2 py-1.5 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors font-medium"
+                        className="text-xs px-2 py-1.5 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-colors font-medium"
                         disabled={isPending}
                     >
                         From start
                     </button>
                 </div>
 
-                <div className="border-t border-gray-200 my-2"></div>
+                <div className="border-t border-border my-2"></div>
 
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-foreground">
                     Or select custom date:
                 </label>
                 <input
                     type="date"
                     value={selectedDate}
                     onChange={handleDateChange}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                     disabled={isPending}
                 />
             </div>
@@ -147,11 +147,11 @@ export function DateRangePicker({
             <div className="relative w-full sm:w-auto">
                 <button
                     onClick={() => setShowDatePicker(!showDatePicker)}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition-colors hover:bg-gray-50 sm:w-auto sm:justify-start"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm transition-colors hover:bg-accent sm:w-auto sm:justify-start"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4 text-gray-600"
+                        className="h-4 w-4 text-muted-foreground"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -163,17 +163,17 @@ export function DateRangePicker({
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                     </svg>
-                    <span
-                        className={
-                            isCustom
-                                ? 'text-gray-900 font-medium'
-                                : 'text-gray-700'
-                        }
-                    >
+                        <span
+                            className={
+                                isCustom
+                                    ? 'text-foreground font-medium'
+                                    : 'text-foreground'
+                            }
+                        >
                         {formatDisplayDate()}
                     </span>
                     {isCustom && (
-                        <span className="hidden text-xs rounded bg-blue-50 px-1.5 py-0.5 font-medium text-blue-600 sm:inline-flex">
+                            <span className="hidden text-xs rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary sm:inline-flex">
                             Custom
                         </span>
                     )}
@@ -195,14 +195,14 @@ export function DateRangePicker({
                                     <div
                                         role="dialog"
                                         aria-modal="true"
-                                        className="relative z-10 w-full max-w-sm rounded-xl border border-gray-200 bg-white p-4 shadow-2xl"
+                                        className="relative z-10 w-full max-w-sm rounded-lg border border-border bg-card p-4 shadow-2xl"
                                     >
                                         {pickerContent}
                                         <button
                                             onClick={() =>
                                                 setShowDatePicker(false)
                                             }
-                                            className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                            className="mt-4 w-full rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
                                         >
                                             Close
                                         </button>
@@ -211,14 +211,14 @@ export function DateRangePicker({
                                 document.body,
                             )}
 
-                        <div className="absolute top-full right-0 z-50 mt-2 hidden min-w-[280px] rounded-lg border border-gray-200 bg-white p-4 shadow-lg sm:block">
+                        <div className="absolute top-full right-0 z-50 mt-2 hidden min-w-[280px] rounded-lg border border-border bg-card p-4 shadow-lg sm:block">
                             {pickerContent}
                         </div>
                     </>
                 )}
             </div>
             {isPending && (
-                <span className="text-xs text-gray-600">Updating...</span>
+                <span className="text-xs text-muted-foreground">Updating...</span>
             )}
         </div>
     );

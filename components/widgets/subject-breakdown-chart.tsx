@@ -19,7 +19,7 @@ interface SubjectBreakdownChartProps {
 }
 
 export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
-    const { settings } = useSettings();
+    const { settings, chartColors } = useSettings();
     const useShort = settings?.useShortSubjectNames ?? true;
     
     // Sort data by total lessons descending and take top 8
@@ -38,10 +38,10 @@ export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
 
     if (chartData.length === 0) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full flex items-center justify-center">
+            <div className="bg-card rounded-lg shadow-sm border border-border p-6 h-full flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-gray-500">No subject data available</p>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-foreground">No subject data available</p>
+                    <p className="text-sm text-muted-foreground mt-1">
                         Data will appear after syncing with Untis
                     </p>
                 </div>
@@ -50,8 +50,8 @@ export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full flex flex-col">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6 h-full flex flex-col">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
                 Subject Breakdown
             </h3>
             <div className="flex-1 min-h-0">
@@ -63,19 +63,19 @@ export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
                     >
                         <CartesianGrid
                             strokeDasharray="3 3"
-                            stroke="#f0f0f0"
+                            stroke="hsl(var(--border))"
                             horizontal={true}
                             vertical={false}
                         />
                         <XAxis
                             type="number"
-                            tick={{ fontSize: 12 }}
+                            tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                             allowDecimals={false}
                         />
                         <YAxis
                             type="category"
                             dataKey="name"
-                            tick={{ fontSize: 11 }}
+                            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                             width={yAxisWidth}
                             interval={0}
                         />
@@ -84,29 +84,29 @@ export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
                                 if (active && payload && payload.length) {
                                     const data = payload[0].payload;
                                     return (
-                                        <div className="bg-white p-3 shadow-lg rounded-lg border border-gray-100">
-                                            <p className="font-medium text-gray-900 mb-2">
+                                        <div className="bg-popover p-3 shadow-lg rounded-lg border border-border">
+                                            <p className="font-medium text-foreground mb-2">
                                                 {data.fullName}
                                             </p>
                                             <div className="space-y-1">
-                                                <p className="text-sm text-gray-600">
-                                                    <span className="inline-block w-3 h-3 rounded-sm bg-indigo-500 mr-2" />
+                                                <p className="text-sm text-muted-foreground">
+                                                    <span className="inline-block w-3 h-3 rounded-sm mr-2" style={{ backgroundColor: chartColors[0] }} />
                                                     Attended:{" "}
-                                                    <span className="font-medium">
+                                                    <span className="font-medium text-foreground">
                                                         {data.Attended}
                                                     </span>
                                                 </p>
-                                                <p className="text-sm text-gray-600">
-                                                    <span className="inline-block w-3 h-3 rounded-sm bg-red-500 mr-2" />
+                                                <p className="text-sm text-muted-foreground">
+                                                    <span className="inline-block w-3 h-3 rounded-sm mr-2" style={{ backgroundColor: chartColors[1] }} />
                                                     Absences:{" "}
-                                                    <span className="font-medium">
+                                                    <span className="font-medium text-foreground">
                                                         {data.Absences}
                                                     </span>
                                                 </p>
-                                                <p className="text-sm text-gray-600">
-                                                    <span className="inline-block w-3 h-3 rounded-sm bg-gray-400 mr-2" />
+                                                <p className="text-sm text-muted-foreground">
+                                                    <span className="inline-block w-3 h-3 rounded-sm mr-2" style={{ backgroundColor: chartColors[2] }} />
                                                     Cancelled:{" "}
-                                                    <span className="font-medium">
+                                                    <span className="font-medium text-foreground">
                                                         {data.Cancelled}
                                                     </span>
                                                 </p>
@@ -124,14 +124,14 @@ export function SubjectBreakdownChart({ data }: SubjectBreakdownChartProps) {
                         <Bar
                             dataKey="Attended"
                             stackId="a"
-                            fill="#6366f1"
+                            fill={chartColors[0]}
                             radius={[0, 0, 0, 0]}
                         />
-                        <Bar dataKey="Absences" stackId="a" fill="#ef4444" />
+                        <Bar dataKey="Absences" stackId="a" fill={chartColors[1]} />
                         <Bar
                             dataKey="Cancelled"
                             stackId="a"
-                            fill="#9ca3af"
+                            fill={chartColors[2]}
                             radius={[0, 4, 4, 0]}
                         />
                     </BarChart>

@@ -2,6 +2,7 @@
 
 import { TrendingUp, TrendingDown, Minus, Calendar, Clock, BarChart3, Infinity } from 'lucide-react';
 import type { TrendData } from '@/types/widget';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface KPICardProps {
   title: string;
@@ -25,10 +26,10 @@ function KPICard({ title, value, trend, icon, iconBg }: KPICardProps) {
 
   const getTrendColor = () => {
     if (!trend || trend.direction === 'neutral') {
-      return 'text-gray-500';
+        return 'text-muted-foreground';
     }
     // For absences, up is bad (red), down is good (green)
-    return trend.direction === 'up' ? 'text-red-500' : 'text-green-500';
+    return trend.direction === 'up' ? 'text-destructive' : 'text-success';
   };
 
   const formatTrend = () => {
@@ -40,23 +41,25 @@ function KPICard({ title, value, trend, icon, iconBg }: KPICardProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
-          {trend && (
-            <div className={`flex items-center gap-1 mt-2 ${getTrendColor()}`}>
-              {getTrendIcon()}
-              <span className="text-sm font-medium">{formatTrend()}</span>
-            </div>
-          )}
+    <Card className="h-full">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
+            <p className="text-3xl font-bold text-foreground">{value}</p>
+            {trend && (
+              <div className={`flex items-center gap-1 mt-2 ${getTrendColor()}`}>
+                {getTrendIcon()}
+                <span className="text-sm font-medium">{formatTrend()}</span>
+              </div>
+            )}
+          </div>
+          <div className={`p-3 rounded-lg ${iconBg}`}>
+            {icon}
+          </div>
         </div>
-        <div className={`p-3 rounded-lg ${iconBg}`}>
-          {icon}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -85,29 +88,29 @@ export function KPICards({
         title="Last 7 Days"
         value={absences7Days}
         trend={trend7Days}
-        icon={<Calendar className="w-6 h-6 text-blue-600" />}
-        iconBg="bg-blue-100"
+        icon={<Calendar className="w-6 h-6 text-primary" />}
+        iconBg="bg-primary/10"
       />
       <KPICard
         title="Last 14 Days"
         value={absences14Days}
         trend={trend14Days}
-        icon={<Clock className="w-6 h-6 text-purple-600" />}
-        iconBg="bg-purple-100"
+        icon={<Clock className="w-6 h-6 text-primary" />}
+        iconBg="bg-primary/10"
       />
       <KPICard
         title="Last 30 Days"
         value={absences30Days}
         trend={trend30Days}
-        icon={<BarChart3 className="w-6 h-6 text-orange-600" />}
-        iconBg="bg-orange-100"
+        icon={<BarChart3 className="w-6 h-6 text-primary" />}
+        iconBg="bg-primary/10"
       />
       <KPICard
         title="All Time"
         value={totalAbsences}
         trend={null}
-        icon={<Infinity className="w-6 h-6 text-green-600" />}
-        iconBg="bg-green-100"
+        icon={<Infinity className="w-6 h-6 text-primary" />}
+        iconBg="bg-primary/10"
       />
     </div>
   );
@@ -140,65 +143,67 @@ export function SingleKPIWidget({
       title: 'Last 7 Days',
       value: absences7Days,
       trend: trend7Days,
-      icon: <Calendar className="w-6 h-6 text-blue-600" />,
-      iconBg: 'bg-blue-100',
+      icon: <Calendar className="w-6 h-6 text-primary" />,
+      iconBg: 'bg-primary/10',
     },
     KPI_14DAYS: {
       title: 'Last 14 Days',
       value: absences14Days,
       trend: trend14Days,
-      icon: <Clock className="w-6 h-6 text-purple-600" />,
-      iconBg: 'bg-purple-100',
+      icon: <Clock className="w-6 h-6 text-primary" />,
+      iconBg: 'bg-primary/10',
     },
     KPI_30DAYS: {
       title: 'Last 30 Days',
       value: absences30Days,
       trend: trend30Days,
-      icon: <BarChart3 className="w-6 h-6 text-orange-600" />,
-      iconBg: 'bg-orange-100',
+      icon: <BarChart3 className="w-6 h-6 text-primary" />,
+      iconBg: 'bg-primary/10',
     },
     KPI_ALLTIME: {
       title: 'All Time',
       value: totalAbsences,
       trend: null,
-      icon: <Infinity className="w-6 h-6 text-green-600" />,
-      iconBg: 'bg-green-100',
+      icon: <Infinity className="w-6 h-6 text-primary" />,
+      iconBg: 'bg-primary/10',
     },
   };
 
-  const { title, value, trend, icon, iconBg } = config[type];
+   const { title, value, trend, icon, iconBg } = config[type];
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
-          <p className="text-sm text-gray-400 mt-1">absences</p>
-          {trend && (
-            <div className={`flex items-center gap-1 mt-2 ${
-              !trend || trend.direction === 'neutral' ? 'text-gray-500' :
-              trend.direction === 'up' ? 'text-red-500' : 'text-green-500'
-            }`}>
-              {trend.direction === 'up' ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : trend.direction === 'down' ? (
-                <TrendingDown className="w-4 h-4" />
-              ) : (
-                <Minus className="w-4 h-4" />
-              )}
-              <span className="text-sm font-medium">
-                {typeof trend?.changePercent === 'number'
-                  ? `${trend.changePercent >= 0 ? '+' : ''}${trend.changePercent.toFixed(1)}%`
-                  : 'No change'}
-              </span>
-            </div>
-          )}
+   return (
+     <Card className="h-full">
+       <CardContent className="p-6">
+         <div className="flex items-start justify-between">
+           <div className="flex-1">
+             <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
+             <p className="text-3xl font-bold text-foreground">{value}</p>
+             <p className="text-sm text-muted-foreground mt-1">absences</p>
+             {trend && (
+               <div className={`flex items-center gap-1 mt-2 ${
+                 !trend || trend.direction === 'neutral' ? 'text-muted-foreground' :
+                 trend.direction === 'up' ? 'text-destructive' : 'text-success'
+               }`}>
+                {trend.direction === 'up' ? (
+                  <TrendingUp className="w-4 h-4" />
+                ) : trend.direction === 'down' ? (
+                  <TrendingDown className="w-4 h-4" />
+                ) : (
+                  <Minus className="w-4 h-4" />
+                )}
+                <span className="text-sm font-medium">
+                  {typeof trend?.changePercent === 'number'
+                    ? `${trend.changePercent >= 0 ? '+' : ''}${trend.changePercent.toFixed(1)}%`
+                    : 'No change'}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className={`p-3 rounded-lg ${iconBg}`}>
+            {icon}
+          </div>
         </div>
-        <div className={`p-3 rounded-lg ${iconBg}`}>
-          {icon}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

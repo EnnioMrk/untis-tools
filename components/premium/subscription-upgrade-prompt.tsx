@@ -9,15 +9,21 @@ import { isPlanAtLeast, type AppPlan, type PaidPlan } from "@/lib/plans";
 import { inferClientPaddleEnvironment } from "@/lib/paddle-environment";
 import { useSession } from "next-auth/react";
 import { Plan } from "@prisma/client";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 function formatPlanName(plan: Plan): string {
-    if (plan === "PREMIUM") {
-        return "Premium";
-    }
-    if (plan === "STANDARD") {
-        return "Standard";
-    }
-    return "Basic";
+  if (plan === "PREMIUM") return "Premium";
+  if (plan === "STANDARD") return "Standard";
+  return "Basic";
 }
 
 interface SubscriptionUpgradePromptProps {
@@ -30,7 +36,7 @@ interface SubscriptionUpgradePromptProps {
 }
 
 const STORAGE_KEY = "subscription-upgrade-dismissed";
-const SHOW_INTERVAL_MS = 60 * 60 * 24 * 7; // Show once per week (7 days)
+const SHOW_INTERVAL_MS = 60 * 60 * 24 * 7;
 
 function shouldShowPrompt(): boolean {
   if (typeof window === "undefined") return true;
@@ -73,12 +79,6 @@ export function SubscriptionUpgradePrompt({
   const session = useSession();
 
   useEffect(() => {
-    // Only show prompt if:
-    // 1. User is authenticated (session exists)
-    // 2. User has an active subscription (planSource === "SUBSCRIPTION")
-    // 3. User has a Paddle subscription ID
-    // 4. Not admin
-    // 5. Enough time has passed since last dismiss
     if (
       session?.status === "authenticated" &&
       planSource === "SUBSCRIPTION" &&
@@ -130,20 +130,17 @@ export function SubscriptionUpgradePrompt({
     setError(null);
 
     try {
-      // Determine the next plan to upgrade to
       let targetPlan: PaidPlan;
       if (currentPlan === "BASIC") {
         targetPlan = "STANDARD";
       } else if (currentPlan === "STANDARD") {
         targetPlan = "PREMIUM";
       } else {
-        // Already at PREMIUM, dismiss the prompt
         markPromptDismissed();
         setVisible(false);
         return;
       }
 
-      // Check if user already has access to the next plan or higher
       if (hasActiveAccess && isPlanAtLeast(userPlan, targetPlan)) {
         markPromptDismissed();
         setVisible(false);
@@ -159,8 +156,6 @@ export function SubscriptionUpgradePrompt({
       }
 
       if (result.checkoutId) {
-        // Open Paddle checkout overlay
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).Paddle?.Checkout.open({
           transactionId: result.checkoutId,
           settings: {
@@ -191,82 +186,60 @@ export function SubscriptionUpgradePrompt({
   if (!nextPlanLabel) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700 animate-in slide-in-from-bottom-4">
-        {/* Close button */}
-        <button
-          onClick={handleDismiss}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition"
-          aria-label="Dismiss upgrade prompt"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="p-6 flex flex-col items-center text-center gap-4">
-          {/* Icon */}
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-500/20 dark:to-fuchsia-500/20 flex items-center justify-center">
+    <Dialog open={visible} onOpenChange={setVisible}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader className="text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 dark:from-violet-500/20 dark:to-fuchsia-500/20 flex items-center justify-center mb-4">
             <Sparkles className="w-8 h-8 text-violet-600 dark:text-violet-400" />
           </div>
+          <DialogTitle className="text-2xl">Ready to upgrade?</DialogTitle>
+          <DialogDescription className="text-base">
+            You&apos;re currently on the <span className="font-semibold text-foreground">{formatPlanName(currentPlan)}</span> plan. Upgrade to <strong>{nextPlanLabel}</strong> to unlock more widgets, longer statistics ranges, and premium features.
+          </DialogDescription>
+        </DialogHeader>
 
-          {/* Title */}
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Ready to upgrade?
-          </h2>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-          {/* Message */}
-          <p className="text-gray-600 dark:text-gray-300 max-w-md">
-            You&apos;re currently on the{" "}
-            <span className="font-semibold text-gray-900 dark:text-white">
-              {formatPlanName(currentPlan)}
-            </span>{" "}
-            plan. Upgrade to <strong>{nextPlanLabel}</strong> to unlock more
-            widgets, longer statistics ranges, and premium features.
-          </p>
+        <DialogFooter className="flex flex-col gap-3 sm:flex-col">
+          <Button
+            onClick={handleUpgrade}
+            disabled={loading || !paddleReady}
+            className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Opening checkout...
+              </>
+            ) : (
+              <>
+                <Crown className="w-5 h-5 mr-2" />
+                Upgrade to {nextPlanLabel}
+              </>
+            )}
+          </Button>
 
-          {/* Error display */}
-          {error && (
-            <div className="w-full p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            </div>
+          {!loading && (
+            <Button
+              variant="ghost"
+              onClick={handleDismiss}
+              className="w-full"
+            >
+              Not now, maybe later
+            </Button>
           )}
 
-          {/* Action buttons */}
-          <div className="flex flex-col gap-3 w-full mt-2">
-            <button
-              onClick={handleUpgrade}
-              disabled={loading || !paddleReady}
-              className="w-full py-3 px-6 text-white font-medium rounded-xl flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:from-violet-400 disabled:to-fuchsia-400 disabled:cursor-not-allowed transition"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Opening checkout...
-                </>
-              ) : (
-                <>
-                  <Crown className="w-5 h-5" />
-                  Upgrade to {nextPlanLabel}
-                </>
-              )}
-            </button>
-
-            {!loading && (
-              <button
-                onClick={handleDismiss}
-                className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition"
-              >
-                Not now, maybe later
-              </button>
-            )}
-          </div>
-
           {!paddleReady && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+            <p className="text-xs text-muted-foreground text-center mt-2">
               Loading payment system...
             </p>
           )}
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

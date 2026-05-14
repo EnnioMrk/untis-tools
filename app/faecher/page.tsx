@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
 import { FaecherClient } from "./faecher-client";
+import { FaecherHeader } from "./faecher-header";
 import { getSubjectOverview, hasUntisConnection } from "./actions";
 import { auth } from "@/lib/auth";
 import { ensureActiveSubscriptionAccess } from "@/lib/subscription";
-import { getShopTheme } from "@/lib/shop";
-import { getUserTheme } from "./actions";
-import { FaecherHeader } from "./faecher-header";
 
 export const dynamic = "force-dynamic";
 
@@ -23,17 +21,12 @@ export default async function FaecherPage() {
         redirect("/onboarding");
     }
 
-    const [subjects, activeTheme] = await Promise.all([
-        getSubjectOverview(),
-        getUserTheme(session.user.id),
-    ]);
-
-    const themeConfig = getShopTheme(activeTheme);
+    const subjects = await getSubjectOverview();
 
     return (
-        <main className={`min-h-screen ${themeConfig.pageClass}`}>
+        <main className="min-h-screen bg-background">
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-                <FaecherHeader activeTheme={activeTheme} />
+                <FaecherHeader />
                 <FaecherClient subjects={subjects} />
             </div>
         </main>

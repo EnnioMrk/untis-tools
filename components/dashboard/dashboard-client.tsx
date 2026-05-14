@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { type AppPlan } from "@/lib/plans";
-import { getShopTheme, type ShopThemeId } from "@/lib/shop";
 import { useSettings } from "@/components/providers/settings-provider";
 import {
     RefreshCw,
@@ -11,20 +10,22 @@ import {
     Save,
     Edit3,
     Loader2,
-    ShoppingBag,
     Shield,
     BookOpen,
     Settings,
     AlertTriangle,
+    Palette,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { DateRangePicker } from "@/components/dashboard/date-range-picker";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
+import { Button } from "@/components/ui/button";
 import { SettingsModal } from "@/components/settings/settings-modal";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import type { WidgetData, UserStatsResponse } from "@/types/widget";
 
 interface DashboardHeaderProps {
     userPlan: AppPlan;
-    activeTheme: ShopThemeId;
     isAdmin: boolean;
     initialDate: Date | null;
     isCustom: boolean;
@@ -42,7 +43,6 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({
     userPlan,
-    activeTheme,
     isAdmin,
     initialDate,
     isCustom,
@@ -57,138 +57,118 @@ export function DashboardHeader({
     onEditSaveClick,
     onSettingsClick,
 }: DashboardHeaderProps) {
-    const themeConfig = getShopTheme(activeTheme);
-
     return (
         <>
             {showOnlyUnexcusedAbsences && (
-                <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+                <div className="mb-4 rounded-lg border border-border bg-card p-4">
                     <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                        <p className="text-sm text-yellow-800">
+                        <AlertTriangle className="w-5 h-5 text-warning" />
+                        <p className="text-sm text-muted-foreground">
                             <strong>Hinweis:</strong> Nur unentschuldigte Fehlstunden werden angezeigt.
                             Andere Daten werden ausgeblendet.
                         </p>
                     </div>
                 </div>
             )}
-            <div
-                className={`relative z-20 mb-6 rounded-3xl border p-5 shadow-sm backdrop-blur ${themeConfig.headerClass}`}
-            >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                    <div className="mb-3 flex flex-wrap gap-2 text-sm">
-                        <span
-                            className={`rounded-full px-3 py-1 font-medium ${themeConfig.badgeClass}`}
-                        >
-                            Theme: {themeConfig.name}
-                        </span>
-                        <span className="rounded-full bg-white/80 px-3 py-1 font-medium text-slate-700">
-                            Plan: {userPlan}
-                        </span>
-                    </div>
-                    <h1 className="text-2xl font-bold text-slate-900">
-                        Dashboard
-                    </h1>
-                    <p className="mt-1 text-sm text-slate-600">
-                        Daten aktualisieren, Layout ändern oder Shop für neue
-                        Themes und Upgrades besuchen.
-                    </p>
-                </div>
+            <Card className="relative z-20 mb-6 p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <div className="mb-3 flex flex-wrap gap-2 text-sm">
+                            <span className="rounded-full px-3 py-1 font-medium bg-muted text-muted-foreground">
+                                Plan: {userPlan}
+                            </span>
+                        </div>
 
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
-                    <Link
-                        href="/shop"
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
-                    >
-                        <ShoppingBag className="w-4 h-4" />
-                        Shop
-                    </Link>
-                    <Link
-                        href="/faecher"
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
-                    >
-                        <BookOpen className="w-4 h-4" />
-                        Fächer
-                    </Link>
-                    {isAdmin && (
-                        <Link
-                            href="/admin"
-                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
-                        >
-                            <Shield className="w-4 h-4" />
-                            Admin
-                        </Link>
-                    )}
-                    <DateRangePicker
-                        initialDate={initialDate}
-                        isCustom={isCustom}
-                        presetDates={presetDates}
-                        onDateChange={onDateChange}
-                    />
-                    <button
-                        onClick={onReloadClick}
-                        disabled={isSyncing}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 sm:w-auto"
-                        title="Reload data without cache"
-                    >
-                        {isSyncing ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Wird geladen...
-                            </>
-                        ) : (
-                            <>
-                                <RefreshCw className="w-4 h-4" />
-                                Neu laden
-                            </>
+                        <h1 className="text-2xl font-bold text-foreground">
+                            Dashboard
+                        </h1>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Daten aktualisieren, Layout ändern und Widgets verwalten.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
+                        <Button asChild variant="outline">
+                            <Link href="/faecher">
+                                <BookOpen className="w-4 h-4" />
+                                Fächer
+                            </Link>
+                        </Button>
+                        {isAdmin && (
+                            <Button asChild variant="outline">
+                                <Link href="/admin">
+                                    <Shield className="w-4 h-4" />
+                                    Admin
+                                </Link>
+                            </Button>
                         )}
-                    </button>
-                    {isEditMode && (
-                        <button
-                            onClick={onAddWidgetClick}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
+                        <DateRangePicker
+                            initialDate={initialDate}
+                            isCustom={isCustom}
+                            presetDates={presetDates}
+                            onDateChange={onDateChange}
+                        />
+                        <Button
+                            onClick={onReloadClick}
+                            disabled={isSyncing}
+                            variant="outline"
+                            title="Reload data without cache"
                         >
-                            <Plus className="w-4 h-4" />
-                            Widget hinzufügen
-                        </button>
-                    )}
-                    <button
-                        onClick={onEditSaveClick}
-                        disabled={isSaving}
-                        className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:w-auto ${
-                            isEditMode
-                                ? "bg-blue-600 text-white hover:bg-blue-700"
-                                : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                        }`}
-                    >
-                        {isSaving ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Saving...
-                            </>
-                        ) : isEditMode ? (
-                            <>
-                                <Save className="w-4 h-4" />
-                                Layout speichern
-                            </>
-                        ) : (
-                            <>
-                                <Edit3 className="w-4 h-4" />
-                                Dashboard bearbeiten
-                            </>
+                            {isSyncing ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Wird geladen...
+                                </>
+                            ) : (
+                                <>
+                                    <RefreshCw className="w-4 h-4" />
+                                    Neu laden
+                                </>
+                            )}
+                        </Button>
+                        {isEditMode && (
+                            <Button onClick={onAddWidgetClick} variant="outline">
+                                <Plus className="w-4 h-4" />
+                                Widget hinzufügen
+                            </Button>
                         )}
-                    </button>
-                    <button
-                        onClick={onSettingsClick}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
-                    >
-                        <Settings className="w-4 h-5" />
-                        Einstellungen
-                    </button>
+                        <Button
+                            onClick={onEditSaveClick}
+                            disabled={isSaving}
+                            variant="default"
+                            className={isEditMode ? "bg-primary text-primary-foreground hover:bg-primary/90" : undefined}
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : isEditMode ? (
+                                <>
+                                    <Save className="w-4 h-4" />
+                                    Layout speichern
+                                </>
+                            ) : (
+                                <>
+                                    <Edit3 className="w-4 h-4" />
+                                    Dashboard bearbeiten
+                                </>
+                            )}
+                        </Button>
+                         <Button onClick={onSettingsClick} variant="outline">
+                             <Settings className="w-4 h-5" />
+                             Einstellungen
+                         </Button>
+                         <ThemeToggle />
+                          <Button asChild variant="outline">
+                              <Link href="/dashboard/theme">
+                                  <Palette className="w-4 h-4" />
+                                  Thema
+                              </Link>
+                          </Button>
+                    </div>
                 </div>
-            </div>
-            </div>
+            </Card>
         </>
     );
 }
@@ -197,7 +177,6 @@ interface DashboardClientProps {
     initialWidgets: WidgetData[];
     initialStats: UserStatsResponse | null;
     userPlan: AppPlan;
-    activeTheme: ShopThemeId;
     isAdmin: boolean;
     initialDate: Date | null;
     isCustom: boolean;
@@ -208,7 +187,6 @@ export function DashboardClient({
     initialWidgets,
     initialStats,
     userPlan,
-    activeTheme,
     isAdmin,
     initialDate,
     isCustom,
@@ -253,7 +231,6 @@ export function DashboardClient({
             <div>
                 <DashboardHeader
                     userPlan={userPlan}
-                    activeTheme={activeTheme}
                     isAdmin={isAdmin}
                     initialDate={initialDate}
                     isCustom={isCustom}

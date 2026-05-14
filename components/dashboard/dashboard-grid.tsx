@@ -28,8 +28,10 @@ import { SingleKPIWidget } from "@/components/widgets/kpi-cards";
 import { AbsenceBarChart } from "@/components/widgets/absence-bar-chart";
 import { AbsenceTrendChart } from "@/components/widgets/absence-trend-chart";
 import { SubjectBreakdownChart } from "@/components/widgets/subject-breakdown-chart";
-import { AbsenceRecommender } from "@/components/widgets/absence-recommender";
 import { TotalAbsenceBar } from "@/components/widgets/total-absence-bar";
+import { AbsenceRateWidget } from "@/components/widgets/absence-rate-widget";
+import { AbsenceRecommender } from "@/components/widgets/absence-recommender";
+import { Card } from "@/components/ui/card";
 import { WidgetLibrary } from "@/components/dashboard/widget-library";
 import {
     saveWidgetLayout,
@@ -477,11 +479,11 @@ export function DashboardGrid({
         if (!widgetStats) {
             return (
                 <div className="flex flex-col items-center justify-center h-full gap-2">
-                    <p className="text-gray-500">Keine Daten verfügbar</p>
+                    <p className="text-muted-foreground">Keine Daten verfügbar</p>
                     <button
                         onClick={handleManualSync}
                         disabled={isSyncing}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-primary hover:text-primary/90 disabled:opacity-50"
                     >
                         {isSyncing ? (
                             <>
@@ -496,7 +498,7 @@ export function DashboardGrid({
                         )}
                     </button>
                     {syncError && (
-                        <p className="text-xs text-red-500">{syncError}</p>
+                        <p className="text-xs text-destructive">{syncError}</p>
                     )}
                 </div>
             );
@@ -594,7 +596,7 @@ export function DashboardGrid({
             default:
                 return (
                     <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500">Unbekannter Widget-Typ</p>
+                        <p className="text-muted-foreground">Unbekannter Widget-Typ</p>
                     </div>
                 );
         }
@@ -626,16 +628,16 @@ export function DashboardGrid({
                         margin={[16, 16]}
                     >
                         {widgets.map((widget) => (
-                            <div
+                            <Card
                                 key={widget.id}
-                                className="relative bg-white rounded-xl shadow-sm border overflow-hidden"
+                                className="relative overflow-hidden"
                             >
                                 {isEditMode && (
                                     <button
                                         onClick={() =>
                                             handleRemoveWidget(widget.id)
                                         }
-                                        className="absolute top-3 right-3 z-10 rounded-md border border-gray-200 bg-white/95 p-1.5 text-gray-400 shadow-sm transition-colors hover:text-red-500"
+                                        className="absolute top-3 right-3 z-10 rounded-md border border-border bg-card/95 p-1.5 text-muted-foreground shadow-sm transition-colors hover:text-destructive"
                                         title={`Entfernen ${
                                             WIDGET_DEFINITIONS[widget.type]
                                                 ?.name ?? "widget"
@@ -653,8 +655,8 @@ export function DashboardGrid({
                                     }`}
                                 >
                                     {renderWidgetContent(widget)}
-                                </div>
-                            </div>
+                                    </div>
+                                </Card>
                         ))}
                     </Responsive>
                 )}
@@ -663,18 +665,18 @@ export function DashboardGrid({
             {/* Empty state */}
             {widgets.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="bg-gray-100 rounded-full p-4 mb-4">
-                        <Plus className="w-8 h-8 text-gray-400" />
+                    <div className="bg-muted rounded-full p-4 mb-4">
+                        <Plus className="w-8 h-8 text-muted-foreground" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    <h3 className="text-lg font-medium text-foreground mb-2">
                         Noch keine Widgets
                     </h3>
-                    <p className="text-gray-500 mb-4">
+                    <p className="text-muted-foreground mb-4">
                         Widgets hinzufügen, um Ihr Dashboard anzupassen
                     </p>
                     <button
                         onClick={() => setIsLibraryOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Widget hinzufügen

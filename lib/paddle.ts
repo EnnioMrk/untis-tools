@@ -6,7 +6,6 @@ import {
 } from "@paddle/paddle-node-sdk";
 import { WebhooksValidator } from "@paddle/paddle-node-sdk";
 import type { PaidPlan } from "@/lib/plans";
-import type { ShopThemeId } from "@/lib/shop";
 import { inferServerPaddleEnvironment } from "@/lib/paddle-environment";
 
 // Initialize Paddle SDK client
@@ -111,44 +110,6 @@ export async function createCheckout(
         return transaction;
     } catch (error) {
         console.error("Failed to create checkout transaction:", error);
-        throw error;
-    }
-}
-
-export async function createThemeCheckout(
-    customerId: string,
-    priceId: string,
-    options: {
-        userId: string;
-        themeId: ShopThemeId;
-        continueUrl?: string;
-    },
-): Promise<Transaction | null> {
-    if (!paddleClient) {
-        throw new Error("Paddle client is not initialized");
-    }
-
-    try {
-        const transaction = await paddleClient.transactions.create({
-            customerId,
-            items: [
-                {
-                    priceId,
-                    quantity: 1,
-                },
-            ],
-            customData: {
-                customerId,
-                userId: options.userId,
-                themeId: options.themeId,
-                purchaseType: "THEME",
-                continueUrl: options.continueUrl,
-            },
-        });
-
-        return transaction;
-    } catch (error) {
-        console.error("Failed to create theme checkout transaction:", error);
         throw error;
     }
 }
@@ -296,30 +257,6 @@ export async function createMultiCheckout(
         console.error("Failed to create multi-plan checkout transaction:", error);
         throw error;
     }
-}
-
-export function getThemePriceId(themeId: ShopThemeId): string {
-    const priceMap: Record<
-        Exclude<ShopThemeId, "DEFAULT">,
-        string | undefined
-    > = {
-        MIDNIGHT: process.env.PADDLE_THEME_MIDNIGHT_PRICE_ID,
-        SUNSET: process.env.PADDLE_THEME_SUNSET_PRICE_ID,
-        FOREST: process.env.PADDLE_THEME_FOREST_PRICE_ID,
-        AURORA: process.env.PADDLE_THEME_AURORA_PRICE_ID,
-    };
-
-    if (themeId === "DEFAULT") {
-        throw new Error("Default theme does not require a price ID");
-    }
-
-    const priceId = priceMap[themeId];
-
-    if (!priceId) {
-        throw new Error(`Price ID for theme ${themeId} is not set`);
-    }
-
-    return priceId;
 }
 
 export function resolvePlanFromPriceId(

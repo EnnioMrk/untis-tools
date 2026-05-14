@@ -48,7 +48,7 @@ export function ReferralCodeCard({
     };
 
     return (
-        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-2xl">
                     <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
@@ -81,13 +81,13 @@ export function ReferralCodeCard({
                     </p>
                 </div>
 
-                <div className="w-full max-w-md rounded-2xl border border-violet-200 bg-violet-50 p-5 dark:border-violet-500/30 dark:bg-violet-500/10">
+                <div className="w-full max-w-md rounded-lg border border-violet-200 bg-violet-50 p-5 dark:border-violet-500/30 dark:bg-violet-500/10">
                     {code ? (
                         <>
                             <div className="text-xs font-medium uppercase tracking-wide text-violet-700 dark:text-violet-300">
                                 Ihr Empfehlungscode
                             </div>
-                            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-lg font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white">
+                            <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-white px-4 py-3 text-lg font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white">
                                 <span>{code}</span>
                                 <button
                                     type="button"
@@ -104,7 +104,7 @@ export function ReferralCodeCard({
                             type="button"
                             onClick={handleCreate}
                             disabled={isPending}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white transition hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-60"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white transition hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-60"
                         >
                             {isPending ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />

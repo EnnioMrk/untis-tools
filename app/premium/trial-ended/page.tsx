@@ -27,7 +27,7 @@ export default async function TrialEndedPage() {
     return (
         <div className="min-h-screen bg-slate-950 px-4 py-12 text-white">
             <div className="mx-auto flex max-w-5xl flex-col gap-8">
-                <section className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-8 shadow-2xl">
+                <section className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-8 shadow-2xl">
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                         <div className="max-w-3xl">
                             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-amber-400/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-200">
@@ -46,7 +46,7 @@ export default async function TrialEndedPage() {
                         </div>
                         <Link
                             href="/auth/signin"
-                            className="inline-flex items-center justify-center rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/5"
+                            className="inline-flex items-center justify-center rounded-lg border border-white/15 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/5"
                         >
                             Konto wechseln
                         </Link>
@@ -57,7 +57,7 @@ export default async function TrialEndedPage() {
                     {plans.map((plan) => (
                         <article
                             key={plan.id}
-                            className={`rounded-3xl border p-7 shadow-xl ${
+                            className={`rounded-lg border p-7 shadow-xl ${
                                 plan.highlight === "premium"
                                     ? "border-violet-500 bg-violet-500/10"
                                     : plan.highlight === "popular"

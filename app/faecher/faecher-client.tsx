@@ -2,6 +2,8 @@
 
 import { BookOpen, User, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import type { SubjectOverviewItem } from "./actions";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface FaecherClientProps {
     subjects: SubjectOverviewItem[];
@@ -10,15 +12,15 @@ interface FaecherClientProps {
 export function FaecherClient({ subjects }: FaecherClientProps) {
     if (subjects.length === 0) {
         return (
-            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-8">
-                <BookOpen className="mb-4 h-12 w-12 text-gray-300" />
-                <h3 className="mb-2 text-lg font-medium text-gray-900">
+            <Card className="flex min-h-[400px] flex-col items-center justify-center p-8">
+                <BookOpen className="mb-4 h-12 w-12 text-muted-foreground" />
+                <h3 className="mb-2 text-lg font-medium text-foreground">
                     Keine Fächerauswahl gefunden
                 </h3>
-                <p className="text-center text-gray-500">
+                <p className="text-center text-muted-foreground">
                     Verbinde deinen Untis-Account, um hier deine Fächer anzuzeigen.
                 </p>
-            </div>
+            </Card>
         );
     }
 
@@ -34,20 +36,17 @@ export function FaecherClient({ subjects }: FaecherClientProps) {
                 <StatsCard
                     label="Gesamte Fächer"
                     value={subjects.length}
-                    icon={<BookOpen className="h-5 w-5 text-blue-600" />}
-                    color="blue"
+                    icon={<BookOpen className="h-5 w-5" />}
                 />
                 <StatsCard
                     label="Gesamtstunden"
                     value={subjects.reduce((sum, s) => sum + s.total, 0)}
-                    icon={<Clock className="h-5 w-5 text-indigo-600" />}
-                    color="indigo"
+                    icon={<Clock className="h-5 w-5" />}
                 />
                 <StatsCard
                     label="Gesamt-Fehlzeiten"
                     value={subjects.reduce((sum, s) => sum + s.absences, 0)}
-                    icon={<XCircle className="h-5 w-5 text-red-600" />}
-                    color="red"
+                    icon={<XCircle className="h-5 w-5" />}
                 />
             </div>
         </div>
@@ -61,24 +60,22 @@ interface SubjectCardProps {
 function SubjectCard({ subject }: SubjectCardProps) {
     const attendanceRate = subject.total > 0 ? Math.round((subject.attended / subject.total) * 100) : 0;
     const absenceColor = 
-        subject.absenceRate < 5 ? "text-green-600" :
-        subject.absenceRate < 10 ? "text-amber-600" : "text-red-600";
+        subject.absenceRate < 5 ? "text-green-500" :
+        subject.absenceRate < 10 ? "text-amber-500" : "text-red-500";
 
     return (
-        <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white p-5 transition-all duration-200 hover:shadow-md hover:border-gray-300">
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            
+        <Card className="p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50 border border-gray-200">
-                            <BookOpen className="h-5 w-5 text-gray-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                            <BookOpen className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div className="min-w-0">
-                            <h3 className="font-semibold text-gray-900 truncate">
+                            <h3 className="font-semibold text-foreground truncate">
                                 {subject.subject}
                             </h3>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 {subject.shortName} {subject.id && `• ${subject.id}`}
                             </p>
                         </div>
@@ -87,17 +84,15 @@ function SubjectCard({ subject }: SubjectCardProps) {
 
                 <div className="flex items-center gap-4">
                     {subject.teacherKuerzel && (
-                        <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
+                        <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
                             <User className="h-4 w-4" />
                             <span className="font-medium">{subject.teacherKuerzel}</span>
                         </div>
                     )}
                     
-                    <div className="text-right">
-                        <div className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${absenceColor} bg-opacity-10`}>
-                            Fehlquote: {subject.absenceRate}%
-                        </div>
-                    </div>
+                    <Badge variant="outline" className={absenceColor}>
+                        Fehlquote: {subject.absenceRate}%
+                    </Badge>
                 </div>
             </div>
 
@@ -106,54 +101,46 @@ function SubjectCard({ subject }: SubjectCardProps) {
                     label="Unterricht"
                     value={subject.total}
                     icon={<Clock className="h-4 w-4" />}
-                    bgColor="bg-blue-50"
-                    textColor="text-blue-700"
                 />
                 <StatItem
                     label="Anwesend"
                     value={subject.attended}
                     icon={<CheckCircle className="h-4 w-4" />}
-                    bgColor="bg-green-50"
-                    textColor="text-green-700"
                 />
                 <StatItem
                     label="Fehlzeiten"
                     value={subject.absences}
                     icon={<XCircle className="h-4 w-4" />}
-                    bgColor="bg-red-50"
-                    textColor="text-red-700"
                 />
                 <StatItem
                     label="Ausfall"
                     value={subject.cancelled}
                     icon={<AlertCircle className="h-4 w-4" />}
-                    bgColor="bg-amber-50"
-                    textColor="text-amber-700"
                 />
             </div>
 
             <div className="mt-3">
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                     <span>Anwesenheitsquote</span>
                     <span>{attendanceRate}%</span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                     <div 
-                        className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-300"
+                        className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-300"
                         style={{ width: `${attendanceRate}%` }}
                     />
                 </div>
             </div>
 
             {subject.teacherName && (
-                <div className="mt-3 pt-3 border-t border-gray-100 sm:hidden">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="mt-3 pt-3 border-t border-border sm:hidden">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <User className="h-4 w-4" />
                         <span>{subject.teacherName}</span>
                     </div>
                 </div>
             )}
-        </div>
+        </Card>
     );
 }
 
@@ -161,19 +148,17 @@ interface StatItemProps {
     label: string;
     value: number;
     icon: React.ReactNode;
-    bgColor: string;
-    textColor: string;
 }
 
-function StatItem({ label, value, icon, bgColor, textColor }: StatItemProps) {
+function StatItem({ label, value, icon }: StatItemProps) {
     return (
-        <div className={`flex items-center gap-2 rounded-lg ${bgColor} px-3 py-2`}>
-            <div className={`${textColor}`}>
+        <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
+            <div className="text-muted-foreground">
                 {icon}
             </div>
             <div>
-                <p className="text-xs text-gray-600">{label}</p>
-                <p className={`font-semibold ${textColor}`}>{value}</p>
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="text-sm font-semibold text-foreground">{value}</p>
             </div>
         </div>
     );
@@ -183,25 +168,20 @@ interface StatsCardProps {
     label: string;
     value: number;
     icon: React.ReactNode;
-    color: "blue" | "indigo" | "red";
 }
 
-function StatsCard({ label, value, icon, color }: StatsCardProps) {
-    const colorClasses = {
-        blue: "bg-blue-50 border-blue-100",
-        indigo: "bg-indigo-50 border-indigo-100",
-        red: "bg-red-50 border-red-100",
-    };
-
+function StatsCard({ label, value, icon }: StatsCardProps) {
     return (
-        <div className={`rounded-xl border ${colorClasses[color]} p-4`}>
-            <div className="flex items-center gap-3">
-                {icon}
-                <div>
-                    <p className="text-sm font-medium text-gray-600">{label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <Card>
+            <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                    {icon}
+                    <div>
+                        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                        <p className="text-2xl font-bold text-foreground">{value}</p>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }

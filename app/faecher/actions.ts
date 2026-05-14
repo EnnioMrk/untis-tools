@@ -3,7 +3,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatSubjectDisplayName, SUBJECT_NAME_MAP } from "@/lib/subject";
-import type { ShopThemeId } from "@/lib/shop";
 
 export interface SubjectOverviewItem {
     id: string;
@@ -31,14 +30,6 @@ export async function hasUntisConnection(): Promise<boolean> {
     });
 
     return !!connection?.isActive;
-}
-
-export async function getUserTheme(userId: string): Promise<ShopThemeId> {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { activeTheme: true },
-    });
-    return (user?.activeTheme as ShopThemeId) || "DEFAULT";
 }
 
 /**

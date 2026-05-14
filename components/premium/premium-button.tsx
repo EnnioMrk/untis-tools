@@ -13,6 +13,8 @@ import type { PlanSource } from "@prisma/client";
 import { openCheckout } from "@/app/premium/actions";
 import { Sparkles, Crown, Loader2, Star } from "lucide-react";
 import { inferClientPaddleEnvironment } from "@/lib/paddle-environment";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface PremiumButtonProps {
     currentPlan: AppPlan;
@@ -133,13 +135,15 @@ export function PlanButton({
 
     if (hasCurrentOrHigherPlan) {
         return (
-            <button
+            <Button
                 disabled
-                className={`w-full py-3 px-6 text-white font-medium rounded-lg flex items-center justify-center gap-2 ${
+                className={cn(
+                    "w-full py-3 px-6 text-white font-medium rounded-lg flex items-center justify-center gap-2",
                     currentPlan === "PREMIUM"
                         ? "bg-gradient-to-r from-yellow-400 to-orange-500"
-                        : "bg-gradient-to-r from-blue-500 to-cyan-600"
-                } ${className}`}
+                        : "bg-gradient-to-r from-blue-500 to-cyan-600",
+                    className
+                )}
             >
                 {isCurrentPlan ? (
                     currentPlan === "PREMIUM" ? (
@@ -153,19 +157,22 @@ export function PlanButton({
                 {isCurrentPlan
                     ? `${targetPlanConfig.name} aktiv`
                     : "In Ihrem aktuellen Plan enthalten"}
-            </button>
+            </Button>
         );
     }
 
     if (isTrialPlan) {
         return (
-            <button
+            <Button
                 disabled
-                className={`w-full py-3 px-6 text-white font-medium rounded-lg flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-600 ${className}`}
+                className={cn(
+                    "w-full py-3 px-6 text-white font-medium rounded-lg flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-600",
+                    className
+                )}
             >
                 <Sparkles className="w-5 h-5" />
                 Premium-Test aktiv
-            </button>
+            </Button>
         );
     }
 
@@ -178,14 +185,16 @@ export function PlanButton({
                     </p>
                 </div>
             )}
-            <button
+            <Button
                 onClick={handleCheckout}
                 disabled={loading || !paddle}
-                className={`w-full py-3 px-6 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${
+                className={cn(
+                    "w-full py-3 px-6 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2",
                     targetPlan === "PREMIUM"
                         ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-blue-400 disabled:to-purple-400"
-                        : "bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black disabled:from-slate-500 disabled:to-slate-600"
-                }`}
+                        : "bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black disabled:from-slate-500 disabled:to-slate-600",
+                    className
+                )}
             >
                 {loading ? (
                     <>
@@ -202,7 +211,7 @@ export function PlanButton({
                         {targetPlanConfig.ctaLabel}
                     </>
                 )}
-            </button>
+            </Button>
             {!paddle && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
                     Lade Zahlungssystem...

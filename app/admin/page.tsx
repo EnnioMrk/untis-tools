@@ -172,7 +172,7 @@ export default async function AdminPage() {
     return (
         <div className="min-h-screen bg-slate-100 px-4 py-10 dark:bg-slate-950">
             <div className="mx-auto flex max-w-7xl flex-col gap-8">
-                <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                <section className="rounded-lg border border-slate-200 bg-white p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center gap-3">
                         <Shield className="h-7 w-7 text-blue-600" />
                         <div>
@@ -185,7 +185,7 @@ export default async function AdminPage() {
                         </div>
                     </div>
 
-                    <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
                         <div className="flex items-center gap-3">
                             <Calendar className="h-5 w-5 text-amber-600" />
                             <span className="text-sm font-medium text-amber-900 dark:text-amber-200">
@@ -204,11 +204,11 @@ export default async function AdminPage() {
                                 min={1}
                                 max={365}
                                 defaultValue={1}
-                                className="w-20 rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                className="w-20 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                             />
                             <button
                                 type="submit"
-                                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700"
+                                className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700"
                             >
                                 Simuliere +Tag(e)
                             </button>
@@ -217,7 +217,7 @@ export default async function AdminPage() {
                 </section>
 
                 <section className="grid gap-6 lg:grid-cols-2">
-                    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                    <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900">
                         <div className="mb-5 flex items-center gap-3">
                             <Users className="h-5 w-5 text-violet-600" />
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -232,28 +232,28 @@ export default async function AdminPage() {
                                 type="text"
                                 name="code"
                                 placeholder="Optional custom code"
-                                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                             />
                             <input
                                 type="text"
                                 name="label"
                                 placeholder="Bezeichnung"
-                                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                             />
                             <input
                                 type="number"
                                 name="maxRedemptions"
                                 min={1}
                                 placeholder="Maximale Einlösungen (optional)"
-                                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                             />
-                            <button className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700">
+                            <button className="rounded-lg bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700">
                                 Empfehlungs-Code erstellen
                             </button>
                         </form>
                     </article>
 
-                    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                    <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900">
                         <div className="mb-5 flex items-center gap-3">
                             <TicketPercent className="h-5 w-5 text-emerald-600" />
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -265,13 +265,13 @@ export default async function AdminPage() {
                                 type="text"
                                 name="code"
                                 placeholder="Optional custom code"
-                                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                             />
                             <input
                                 type="text"
                                 name="description"
                                 placeholder="Beschreibung"
-                                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                             />
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <input
@@ -280,7 +280,7 @@ export default async function AdminPage() {
                                     min={0}
                                     max={100}
                                     placeholder="Rabatt %"
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                    className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                 />
                                 <input
                                     type="number"
@@ -288,10 +288,10 @@ export default async function AdminPage() {
                                     min={0}
                                     max={24}
                                     placeholder="Kostenlose Monate"
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                    className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                 />
                             </div>
-                            <button className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                            <button className="rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
                                 Gutschein-Code erstellen
                             </button>
                         </form>
@@ -309,7 +309,7 @@ export default async function AdminPage() {
                             return (
                                 <div
                                     key={user.id}
-                                    className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+                                    className="rounded-lg border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900"
                                 >
                                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                         <div className="flex-1">
@@ -337,7 +337,7 @@ export default async function AdminPage() {
                                             </div>
 
                                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                                <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/50">
+                                                <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-950/50">
                                                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                                         <Crown className="h-4 w-4" />
                                                         <span className="text-xs font-medium uppercase">Plan</span>
@@ -347,7 +347,7 @@ export default async function AdminPage() {
                                                     </div>
                                                 </div>
 
-                                                <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/50">
+                                                <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-950/50">
                                                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                                         <Calendar className="h-4 w-4" />
                                                         <span className="text-xs font-medium uppercase">Nächste Abrechnung</span>
@@ -359,7 +359,7 @@ export default async function AdminPage() {
                                                     </div>
                                                 </div>
 
-                                                <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/50">
+                                                <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-950/50">
                                                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                                         <Clock className="h-4 w-4" />
                                                         <span className="text-xs font-medium uppercase">Verbleibende Zeit</span>
@@ -373,7 +373,7 @@ export default async function AdminPage() {
                                             {(user.trialGrants.length > 0 || user.bonusGrants.length > 0) && (
                                                 <div className="mt-4 space-y-3">
                                                     {activeTrial && (
-                                                        <div className="flex items-center gap-3 rounded-2xl bg-blue-50 p-4 dark:bg-blue-900/20">
+                                                        <div className="flex items-center gap-3 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
                                                             <CheckCircle2 className="h-5 w-5 text-blue-600" />
                                                             <div className="flex-1">
                                                                 <div className="font-medium text-blue-900 dark:text-blue-200">
@@ -392,7 +392,7 @@ export default async function AdminPage() {
                                                     )}
                                                     
                                                     {user.hadTrial && !activeTrial && (
-                                                        <div className="flex items-center gap-3 rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
+                                                        <div className="flex items-center gap-3 rounded-lg bg-slate-100 p-4 dark:bg-slate-800">
                                                             <XCircle className="h-5 w-5 text-slate-500" />
                                                             <div className="text-sm text-slate-600 dark:text-slate-400">
                                                                 Test genutzt
@@ -412,7 +412,7 @@ export default async function AdminPage() {
                                                                     ? "admin granted"
                                                                     : "coupon";
                                                                 return (
-                                                                    <div key={grant.id} className="flex items-center justify-between rounded-xl bg-emerald-50 p-3 dark:bg-emerald-900/20">
+                                                                    <div key={grant.id} className="flex items-center justify-between rounded-lg bg-emerald-50 p-3 dark:bg-emerald-900/20">
                                                                         <div className="flex-1">
                                                                             <div className="flex items-center gap-2">
                                                                                 <Gift className="h-4 w-4 text-emerald-600" />
@@ -439,23 +439,23 @@ export default async function AdminPage() {
                                                     )}
                                                 </div>
                                             )}
-                                        </div>
+</div>
 
                                         <div className="flex flex-col gap-2 lg:w-64">
                                             <form action={toggleUserAdmin} className="w-full">
                                                 <input type="hidden" name="userId" value={user.id} />
                                                 <input type="hidden" name="nextValue" value={String(!user.isAdmin)} />
-                                                <button className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                                                <button className="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
                                                     {user.isAdmin ? "Admin entfernen" : "Zum Admin machen"}
                                                 </button>
                                             </form>
-                                            
+
                                             <form action={updateUserSubscription} className="flex gap-2">
                                                 <input type="hidden" name="userId" value={user.id} />
                                                 <select
                                                     name="plan"
                                                     defaultValue={user.plan}
-                                                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                                    className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                                 >
                                                     <option value="PREMIUM">Premium</option>
                                                     <option value="STANDARD">Standard</option>
@@ -467,16 +467,16 @@ export default async function AdminPage() {
                                                     min={1}
                                                     max={24}
                                                     defaultValue={1}
-                                                    className="w-16 rounded-xl border border-slate-200 px-2 py-2 text-center text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                                                    className="w-16 rounded-lg border border-slate-200 px-2 py-2 text-center text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                                                 />
-                                                <button className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-black dark:bg-white dark:text-slate-900">
+                                                <button className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-black dark:bg-white dark:text-slate-900">
                                                     Gewähren
                                                 </button>
-                                            </form>
-                                            
-                                            <div className="text-xs text-slate-500">
-                                                Referral: {user.ownedReferralCode?.code || "—"}
-                                            </div>
+</form>
+
+                                             <div className="text-xs text-slate-500">
+                                                 Referral: {user.ownedReferralCode?.code || "—"}
+                                             </div>
                                         </div>
                                     </div>
                                 </div>
@@ -486,7 +486,7 @@ export default async function AdminPage() {
                 </section>
 
                 <section className="grid gap-6 lg:grid-cols-2">
-                    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                    <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900">
                         <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                             Referral codes
                         </h2>
@@ -494,7 +494,7 @@ export default async function AdminPage() {
                             {referralCodes.map((code) => (
                                 <div
                                     key={code.id}
-                                    className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800"
+                                    className="rounded-lg border border-slate-200 p-4 dark:border-slate-800"
                                 >
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="font-semibold text-slate-900 dark:text-white">
@@ -533,7 +533,7 @@ export default async function AdminPage() {
                         </div>
                     </article>
 
-                    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                    <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-900">
                         <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
                             Coupon codes
                         </h2>
@@ -541,7 +541,7 @@ export default async function AdminPage() {
                             {couponCodes.map((code) => (
                                 <div
                                     key={code.id}
-                                    className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800"
+                                    className="rounded-lg border border-slate-200 p-4 dark:border-slate-800"
                                 >
 <div className="flex items-start justify-between gap-4">
                                             <div className="font-semibold text-slate-900 dark:text-white">

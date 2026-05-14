@@ -18,24 +18,10 @@ interface AbsenceBarChartProps {
     data: SubjectBreakdownItem[];
 }
 
-// Color palette for subjects
-const COLORS = [
-    "#3b82f6", // blue
-    "#8b5cf6", // purple
-    "#ec4899", // pink
-    "#f97316", // orange
-    "#14b8a6", // teal
-    "#eab308", // yellow
-    "#6366f1", // indigo
-    "#ef4444", // red
-    "#22c55e", // green
-    "#06b6d4", // cyan
-];
-
 export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
-    const { settings } = useSettings();
+    const { chartColors, settings } = useSettings();
     const useShort = settings?.useShortSubjectNames ?? true;
-    
+
     // Sort data by absences descending
     const sortedData = [...data].sort((a, b) => b.absences - a.absences);
 
@@ -48,10 +34,10 @@ export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
 
     if (chartData.length === 0) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full flex items-center justify-center">
+            <div className="bg-card rounded-lg border border-border p-6 h-full flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-gray-500">No absence data available</p>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-foreground">No absence data available</p>
+                    <p className="text-sm text-muted-foreground mt-1">
                         Data will appear after syncing with Untis
                     </p>
                 </div>
@@ -60,8 +46,8 @@ export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 pb-0 h-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-card rounded-lg border border-border p-6 pb-0 h-full">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
                 Absences by Subject
             </h3>
             <div className="h-[calc(100%-3rem)]">
@@ -71,19 +57,19 @@ export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
                         margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
                         barCategoryGap="10%"
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis
                             dataKey="name"
                             interval={0}
-                            tick={({ x, y, index, payload }) => {
-                                const isStaggered = !useShort;
-                                const offsetY = isStaggered ? (index % 2 === 0 ? -10 : 10) : 0;
-                                return (
-                                    <text x={x} y={Number(y) + 12 + offsetY} textAnchor="middle" fontSize={11}>
-                                        {payload.value}
-                                    </text>
-                                );
-                            }}
+                             tick={({ x, y, index, payload }) => {
+                                 const isStaggered = !useShort;
+                                 const offsetY = isStaggered ? (index % 2 === 0 ? -10 : 10) : 0;
+                                 return (
+                                     <text x={x} y={Number(y) + 12 + offsetY} textAnchor="middle" fontSize={11} fill="hsl(var(--muted-foreground))">
+                                         {payload.value}
+                                     </text>
+                                 );
+                             }}
                             height={!useShort ? 45 : 28}
                             padding={{ left: 10, right: 10 }}
                             tickMargin={8}
@@ -99,13 +85,13 @@ export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
                                 if (active && payload && payload.length) {
                                     const data = payload[0].payload;
                                     return (
-                                        <div className="bg-white p-3 shadow-lg rounded-lg border border-gray-100">
-                                            <p className="font-medium text-gray-900">
+                                        <div className="bg-card p-3 shadow-lg rounded-lg border border-border">
+                                            <p className="font-medium text-foreground">
                                                 {data.fullName}
                                             </p>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-muted-foreground">
                                                 Absences:{" "}
-                                                <span className="font-medium">
+                                                <span className="font-medium text-foreground">
                                                     {data.absences}
                                                 </span>
                                             </p>
@@ -119,7 +105,7 @@ export function AbsenceBarChart({ data }: AbsenceBarChartProps) {
                             {chartData.map((_, index) => (
                                 <Cell
                                     key={`cell-${index}`}
-                                    fill={COLORS[index % COLORS.length]}
+                                    fill={chartColors[index % chartColors.length]}
                                 />
                             ))}
                         </Bar>

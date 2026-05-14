@@ -44,12 +44,12 @@ export function TotalAbsenceBar({
   const hasNoData = totalRealLessons === 0 && totalAbsences === 0;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-full flex flex-col justify-center">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-6 h-full flex flex-col justify-center">
       <div className="flex flex-col gap-4">
         {/* Bar and percentage */}
         <div className="flex items-center gap-4">
-          {/* Thick bar */}
-          <div className="flex-1 h-8 bg-gray-100 rounded-full overflow-hidden">
+         {/* Thick bar */}
+         <div className="flex-1 h-8 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{ 
@@ -70,8 +70,8 @@ export function TotalAbsenceBar({
         
         {/* Bottom row: absences count and severity */}
         <div className="flex items-center justify-between">
-          {/* Absences count - left aligned */}
-          <span className="text-sm text-gray-500">
+           {/* Absences count - left aligned */}
+           <span className="text-sm text-muted-foreground">
             {hasNoData 
               ? 'No lesson data available'
               : `${totalAbsences} absences out of ${totalRealLessons} real lessons`

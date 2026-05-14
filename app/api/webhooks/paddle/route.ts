@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizePlan, type PaidPlan, isPlanAtLeast } from "@/lib/plans";
-import { getShopTheme, normalizeShopTheme } from "@/lib/shop";
 import { prisma } from "@/lib/prisma";
 import { grantReferralRewardForSubscriber } from "@/lib/referrals";
 import {
@@ -419,7 +418,6 @@ async function handleTransactionCompleted(data: {
         userId?: string;
         plan?: string;
         purchaseType?: string;
-        themeId?: string;
         continueUrl?: string;
     };
     items?: Array<{
@@ -434,51 +432,6 @@ async function handleTransactionCompleted(data: {
         status,
         custom_data,
     } = data;
-
-    if (custom_data?.purchaseType === "THEME") {
-        const userId =
-            custom_data.userId ||
-            (await resolveUserIdFromCustomerId(customerId));
-        const themeId = normalizeShopTheme(custom_data.themeId);
-        const theme = getShopTheme(themeId);
-
-        if (!userId || theme.priceEuroCents <= 0 || theme.id === "DEFAULT") {
-            console.error(
-                `Invalid theme transaction payload for transaction ${transactionId}`,
-            );
-            return;
-        }
-
-        await prisma.$transaction(async (tx) => {
-            const existingPurchase = await tx.themePurchase.findUnique({
-                where: { userId_theme: { userId, theme: theme.id } },
-                select: { id: true },
-            });
-
-            if (!existingPurchase) {
-                await tx.themePurchase.create({
-                    data: {
-                        userId,
-                        theme: theme.id,
-                        priceCents: theme.priceEuroCents,
-                        paddleTransactionId: transactionId,
-                    },
-                });
-            }
-
-            await tx.user.update({
-                where: { id: userId },
-                data: {
-                    activeTheme: theme.id,
-                },
-            });
-        });
-
-        console.log(
-            `Transaction ${transactionId} unlocked theme ${theme.id} for user ${userId}`,
-        );
-        return;
-    }
 
     // Handle multi-plan subscription purchases
     if (custom_data?.purchaseType === "MULTI_PLAN_SUBSCRIPTION") {

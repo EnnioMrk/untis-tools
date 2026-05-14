@@ -8,7 +8,6 @@ import {
     sanitizeWidgetsForPlan,
     type AppPlan,
 } from "@/lib/plans";
-import { normalizeShopTheme, type ShopThemeId } from "@/lib/shop";
 import { prisma } from "@/lib/prisma";
 import { getUserStatsCache, invalidateUserStatsCache } from "@/lib/cache";
 import { revalidatePath } from "next/cache";
@@ -405,28 +404,6 @@ export async function getUserPlan(): Promise<AppPlan> {
 }
 
 /**
- * Get the current user's active shop theme.
- */
-export async function getUserTheme(): Promise<ShopThemeId> {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return "DEFAULT";
-    }
-
-    try {
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { activeTheme: true },
-        });
-
-        return normalizeShopTheme(user?.activeTheme);
-    } catch (error) {
-        console.error("[getUserTheme] Falling back to DEFAULT theme:", error);
-        return "DEFAULT";
-    }
-}
-
-/**
  * Manually trigger a sync for the current user
  */
 export async function triggerManualSync(): Promise<{
@@ -604,18 +581,60 @@ export async function getPresetDateOptions(): Promise<
 export async function getUserSettings(): Promise<{
     useShortSubjectNames: boolean;
     showOnlyUnexcusedAbsences: boolean;
+    theme: {
+        theme: "light" | "dark" | "system";
+        baseColor: "slate" | "gray" | "zinc" | "neutral" | "stone" | "blue" | "green" | "orange" | "red" | "violet" | "rose" | "amber" | "cyan" | "emerald" | "fuchsia" | "indigo" | "lime" | "pink" | "sky" | "teal" | "yellow";
+        backgroundColor: "neutral" | "stone" | "zinc" | "mauve" | "olive" | "mist" | "taupe";
+        chartColor: "default" | "purple" | "blue" | "green" | "orange" | "red" | "pink" | "indigo" | "cyan" | "amber" | "lime" | "sky" | "teal";
+        radius: number;
+        headingFont: string;
+        bodyFont: string;
+        borderShadowMode: "both" | "borders" | "shadows";
+    };
 }> {
     const session = await auth();
     if (!session?.user?.id) {
-        return { useShortSubjectNames: true, showOnlyUnexcusedAbsences: false };
+        return { 
+            useShortSubjectNames: true, 
+            showOnlyUnexcusedAbsences: false, 
+            theme: {
+                theme: "system",
+                baseColor: "slate",
+                backgroundColor: "neutral",
+                chartColor: "default",
+                radius: 0.5,
+                headingFont: "Geist_Sans",
+                bodyFont: "Geist_Sans",
+                borderShadowMode: "both",
+            }
+        };
     }
 
     const settings = await prisma.userSettings.findUnique({
         where: { userId: session.user.id },
     });
 
-    return {
+return {
         useShortSubjectNames: settings?.useShortSubjectNames ?? true,
         showOnlyUnexcusedAbsences: settings?.showOnlyUnexcusedAbsences ?? false,
+        theme: settings ? {
+            theme: settings.themeMode as "light" | "dark" | "system",
+            baseColor: settings.baseColor as "slate" | "gray" | "zinc" | "neutral" | "stone" | "blue" | "green" | "orange" | "red" | "violet" | "rose" | "amber" | "cyan" | "emerald" | "fuchsia" | "indigo" | "lime" | "pink" | "sky" | "teal" | "yellow",
+            backgroundColor: settings.backgroundColor as "neutral" | "stone" | "zinc" | "mauve" | "olive" | "mist" | "taupe",
+            chartColor: settings.chartColor as "default" | "purple" | "blue" | "green" | "orange" | "red" | "pink" | "indigo" | "cyan" | "amber" | "lime" | "sky" | "teal",
+            radius: settings.radius,
+            headingFont: settings.headingFont,
+            bodyFont: settings.bodyFont,
+            borderShadowMode: settings.borderShadowMode as "both" | "borders" | "shadows",
+        } : {
+            theme: "system",
+            baseColor: "slate",
+            backgroundColor: "neutral",
+            chartColor: "default",
+            radius: 0.5,
+            headingFont: "Geist_Sans",
+            bodyFont: "Geist_Sans",
+            borderShadowMode: "both",
+        },
     };
 }

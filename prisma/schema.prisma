@@ -28,28 +28,20 @@ enum PlanSource {
 }
 
 enum GrantType {
-  SUBSCRIPTION
-  TRIAL
-  REFERRAL
-  COUPON
-  ADMIN
-}
+   SUBSCRIPTION
+   TRIAL
+   REFERRAL
+   COUPON
+   ADMIN
+ }
 
-enum GrantStatus {
-  PENDING
-  ACTIVE
-  EXPIRED
-}
+ enum GrantStatus {
+   PENDING
+   ACTIVE
+   EXPIRED
+ }
 
-enum ShopTheme {
-  DEFAULT
-  MIDNIGHT
-  SUNSET
-  FOREST
-  AURORA
-}
-
-enum WidgetType {
+ enum WidgetType {
   KPI_7DAYS
   KPI_14DAYS
   KPI_30DAYS
@@ -72,7 +64,6 @@ model User {
   plan          Plan       @default(BASIC)
   planSource    PlanSource @default(NONE)
   isAdmin       Boolean    @default(false)
-  activeTheme   ShopTheme @default(DEFAULT)
   
 // Paddle Integration
   paddleCustomerId       String?
@@ -86,7 +77,6 @@ model User {
   untisConnection UntisConnection?
   userStats       UserStats?
   widgets         Widget[]
-  themePurchases  ThemePurchase[]
   ownedReferralCode ReferralCode? @relation("UserOwnedReferralCode")
   redeemedReferral  ReferralRedemption? @relation("RedeemedReferral")
   adminCreatedReferralCodes ReferralCode[] @relation("AdminCreatedReferralCodes")
@@ -97,7 +87,7 @@ model User {
 
   @@index([plan])
   @@index([isAdmin])
-}
+ }
 
 // UntisConnection Model
 
@@ -168,20 +158,6 @@ model Widget {
   @@index([type])
 }
 
-model ThemePurchase {
-  id                  String    @id @default(cuid())
-  userId              String
-  theme               ShopTheme
-  priceCents          Int?
-  paddleTransactionId String?   @unique
-  purchasedAt         DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, theme])
-  @@index([userId])
-}
-
 model AccessGrant {
   id              String      @id @default(cuid())
   userId          String
@@ -211,12 +187,22 @@ model UserSettings {
   userId                String   @unique
   useShortSubjectNames  Boolean  @default(true)
   showOnlyUnexcusedAbsences Boolean @default(false)
-  
+
+  // Theme customization
+   themeMode     String   @default("system") // light, dark, system
+   baseColor     String   @default("slate")  // slate, gray, zinc, blue, green, orange, red, violet, rose
+   backgroundColor String @default("neutral") // neutral, stone, zinc, mauve, olive, mist, taupe
+   chartColor    String   @default("default") // default, purple, blue, green, orange
+   radius        Float    @default(0.5)      // 0-1
+   headingFont   String   @default("Geist_Sans")
+   bodyFont      String   @default("Geist_Sans")
+   borderShadowMode String @default("both") // both, borders, shadows
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([userId])
 }
 
