@@ -71,6 +71,9 @@ export function DashboardHeader({
                 </div>
             )}
             <Card className="relative z-20 mb-6 p-5">
+                <div className="absolute top-4 right-4 sm:hidden">
+                    <ThemeToggle />
+                </div>
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <div className="mb-3 flex flex-wrap gap-2 text-sm">
@@ -132,11 +135,24 @@ export function DashboardHeader({
                                 Widget hinzufügen
                             </Button>
                         )}
+                        <Button onClick={onSettingsClick} variant="outline">
+                            <Settings className="w-4 h-5" />
+                            Einstellungen
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href="/dashboard/theme">
+                                <Palette className="w-4 h-4" />
+                                Thema
+                            </Link>
+                        </Button>
+                        <div className="hidden sm:block">
+                            <ThemeToggle />
+                        </div>
                         <Button
                             onClick={onEditSaveClick}
                             disabled={isSaving}
                             variant="default"
-                            className={isEditMode ? "bg-primary text-primary-foreground hover:bg-primary/90" : undefined}
+                            className={`col-span-2 ${isEditMode ? "bg-primary text-primary-foreground hover:bg-primary/90" : undefined}`}
                         >
                             {isSaving ? (
                                 <>
@@ -155,17 +171,6 @@ export function DashboardHeader({
                                 </>
                             )}
                         </Button>
-                         <Button onClick={onSettingsClick} variant="outline">
-                             <Settings className="w-4 h-5" />
-                             Einstellungen
-                         </Button>
-                         <ThemeToggle />
-                          <Button asChild variant="outline">
-                              <Link href="/dashboard/theme">
-                                  <Palette className="w-4 h-4" />
-                                  Thema
-                              </Link>
-                          </Button>
                     </div>
                 </div>
             </Card>
